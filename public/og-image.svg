@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f5fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8f0f8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="circleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a8c0d8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4e3f0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Logo Circle -->
+  <circle cx="350" cy="315" r="120" fill="url(#circleGrad)" stroke="#b8cce0" stroke-width="4"/>
+  <circle cx="290" cy="340" r="14" fill="#7a9ab8"/>
+  <circle cx="315" cy="290" r="11" fill="#8aabc5"/>
+  <circle cx="355" cy="260" r="9" fill="#9abcd2"/>
+  <circle cx="395" cy="250" r="7" fill="#aacde0"/>
+  
+  <!-- Text -->
+  <text x="520" y="290" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#5a7a8f">SENSE-GUARD</text>
+  <text x="520" y="360" font-family="Arial, sans-serif" font-size="32" fill="#8a9faf">Hear Less. Sense More.</text>
+  
+  <!-- Subtitle -->
+  <text x="520" y="420" font-family="Arial, sans-serif" font-size="24" fill="#a0b0c0">청각장애인을 위한 AI 소리 감지 앱</text>
+</svg>
