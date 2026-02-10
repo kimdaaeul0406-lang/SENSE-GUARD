@@ -9,9 +9,10 @@ interface DangerViewProps {
     onConfirm: () => void;
     onAnalyze: () => Promise<string>;
     aiAutoResult?: { riskLevel: string; description: string; action: string } | null;
+    guardianPhone?: string;
 }
 
-export const DangerView: React.FC<DangerViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, onConfirm, onAnalyze, aiAutoResult }) => {
+export const DangerView: React.FC<DangerViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, onConfirm, onAnalyze, aiAutoResult, guardianPhone }) => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
     const [showManual, setShowManual] = useState(false);
@@ -165,9 +166,67 @@ export const DangerView: React.FC<DangerViewProps> = ({ setCurrentView, setSideb
                             오경보 알림 (중지)
                         </button>
 
-                        <a href="tel:119" className="block w-full text-center bg-red-800 hover:bg-red-900 text-white/90 py-3 rounded-xl text-sm font-medium transition-colors">
+                        <a
+                            href="tel:119"
+                            onClick={(e) => {
+                                const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+                                if (!isMobile) {
+                                    e.preventDefault();
+                                    alert("[PC/웹 환경 알림]\n\n실제 모바일 기기에서는 119 전화 앱이 실행됩니다.");
+                                } else {
+                                    // Mobile Safety Check
+                                    if (!window.confirm("⚠️ 정말로 119로 연결하시겠습니까?\n\n(연결 후 통화 버튼을 눌러야 신고가 접수됩니다)")) {
+                                        e.preventDefault();
+                                    }
+                                }
+                            }}
+                            className="block w-full text-center bg-red-800 hover:bg-red-900 text-white/90 py-3 rounded-xl text-sm font-medium transition-colors"
+                        >
                             119 신고 전화
                         </a>
+
+                        {/* Guardian SOS Button */}
+                        <button
+                            onClick={() => {
+                                if (!guardianPhone) {
+                                    if (window.confirm('보호자 연락처가 설정되지 않았습니다.\n설정 화면으로 이동하시겠습니까?')) {
+                                        setCurrentView('settings');
+                                    }
+                                    return;
+                                }
+
+                                // Mobile Check
+                                const userAgent = navigator.userAgent.toLowerCase();
+                                const isMobile = /iphone|ipad|ipod|android/i.test(userAgent);
+                                const isIos = /iphone|ipad|ipod/i.test(userAgent);
+
+                                const message = encodeURIComponent('🚨 [SENSE-GUARD 긴급 알림] \n지금 위험한 상황인 것 같습니다. 제 위치를 확인해주세요! \n(이 메시지는 청각장애인 안전 앱 SENSE-GUARD에서 발송되었습니다.)');
+
+                                // iOS uses '&', Android/Others use '?'
+                                const separator = isIos ? '&' : '?';
+                                const link = `sms:${guardianPhone}${separator}body=${message}`;
+
+                                // PC Logic
+                                if (!isMobile) {
+                                    const confirmed = window.confirm(
+                                        `[PC/웹 환경 시뮬레이션]\n\n실제 모바일 환경에서는 보호자에게 문자를 보낼 수 있는 화면이 실행됩니다.\n\n수신번호: ${guardianPhone}\n내용: ${decodeURIComponent(message)}\n\n(확인을 누르면 SMS 프로토콜 실행을 시도합니다)`
+                                    );
+                                    if (confirmed) {
+                                        window.location.href = link;
+                                    }
+                                } else {
+                                    // Mobile Logic - Confirm before sending to prevent accidents? 
+                                    // Since it just opens the SMS app, accidental clicks are less destructive than calls.
+                                    // But let's add a simple confirm for safety.
+                                    if (window.confirm(`보호자(${guardianPhone})에게 긴급 문자를 보내시겠습니까?`)) {
+                                        window.location.href = link;
+                                    }
+                                }
+                            }}
+                            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 mt-2"
+                        >
+                            🆘 보호자에게 연락하기 (문자)
+                        </button>
                     </div>
                 </div>
             </main>
@@ -237,7 +296,21 @@ export const DangerView: React.FC<DangerViewProps> = ({ setCurrentView, setSideb
                         </div>
 
                         <div className="p-4 bg-white border-t border-gray-100 flex-shrink-0">
-                            <a href="tel:119" className="block w-full bg-red-600 text-white py-4 rounded-xl font-bold text-center text-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-200">
+                            <a
+                                href="tel:119"
+                                onClick={(e) => {
+                                    const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+                                    if (!isMobile) {
+                                        e.preventDefault();
+                                        alert("[PC/웹 환경 알림]\n\n실제 모바일 기기에서는 119 전화 앱이 실행됩니다.");
+                                    } else {
+                                        if (!window.confirm("⚠️ 정말로 119로 연결하시겠습니까?\n\n(연결 후 통화 버튼을 눌러야 신고가 접수됩니다)")) {
+                                            e.preventDefault();
+                                        }
+                                    }
+                                }}
+                                className="block w-full bg-red-600 text-white py-4 rounded-xl font-bold text-center text-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                            >
                                 🚨 119 긴급 신고하기
                             </a>
                         </div>

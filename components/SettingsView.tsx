@@ -28,6 +28,10 @@ interface SettingsViewProps {
     setNotificationMethod: (method: NotificationMethod) => void;
     notificationHistory: { id: string; date: string; type: string; message: string; color: string; }[];
     onDeleteNotification: (id: string) => void;
+    sensitivity: number;
+    setSensitivity: (val: number) => void;
+    guardianPhone: string;
+    setGuardianPhone: (phone: string) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -43,6 +47,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setNotificationMethod,
     notificationHistory = [],
     onDeleteNotification,
+    sensitivity = 50,
+    setSensitivity = () => { },
+    guardianPhone = '',
+    setGuardianPhone = () => { },
 }) => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col">
@@ -60,19 +68,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             <main className="flex-1 px-4 py-6 space-y-4 overflow-y-auto">
                 <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-4">마이크 권한</h3>
-                    <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-4">소리 감지 설정</h3>
+                    <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">소리 감지 권한</span>
+                            <span className="text-sm text-gray-600">마이크 권한</span>
                             <button className={`px-4 py-1.5 rounded-full text-xs font-semibold ${micPermission === 'granted' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}>
                                 {micPermission === 'granted' ? '허용됨' : '권한 요청'}
                             </button>
                         </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">백그라운드 실행</span>
-                            <button className="px-4 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-full font-semibold">
-                                비활성
-                            </button>
+
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm text-gray-600">감지 민감도</span>
+                                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                                    {sensitivity < 30 ? '둔감' : sensitivity > 70 ? '민감' : '보통'} ({sensitivity})
+                                </span>
+                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                step="10"
+                                value={sensitivity}
+                                onChange={(e) => setSensitivity(Number(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                            />
+                            <div className="flex justify-between text-[10px] text-gray-400 mt-1 px-1">
+                                <span>둔감 (큰 소리만)</span>
+                                <span>민감 (작은 소리도)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -161,9 +185,53 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-4">도움 요청</h3>
-                    <button className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white py-4 rounded-xl mb-3 text-sm font-bold shadow-lg transition-all transform hover:scale-105 active:scale-95">
-                        긴급 상황 알리기 (SOS 요청하기)
+                    <h3 className="text-sm font-semibold text-gray-800 mb-4">보호자 연락처 설정</h3>
+                    <div className="mb-4">
+                        <label className="block text-xs text-gray-500 mb-1">비상시 연락할 번호 (- 없이 입력)</label>
+                        <input
+                            type="tel"
+                            value={guardianPhone}
+                            onChange={(e) => setGuardianPhone(e.target.value)}
+                            placeholder="예: 01012345678"
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                    </div>
+
+                    <h3 className="text-sm font-semibold text-gray-800 mb-4 pt-2 border-t border-gray-100">도움 요청</h3>
+                    <button
+                        onClick={() => {
+                            if (!guardianPhone) {
+                                alert('먼저 [보호자 연락처 설정]에 전화번호를 입력해주세요.');
+                                return;
+                            }
+
+                            // Mobile Check
+                            const userAgent = navigator.userAgent.toLowerCase();
+                            const isMobile = /iphone|ipad|ipod|android/i.test(userAgent);
+                            const isIos = /iphone|ipad|ipod/i.test(userAgent);
+
+                            const message = encodeURIComponent('🚨 [SENSE-GUARD 긴급 알림] \n지금 위험한 상황인 것 같습니다. 제 위치를 확인해주세요! \n(이 메시지는 청각장애인 안전 앱 SENSE-GUARD에서 발송되었습니다.)');
+
+                            // iOS uses '&', Android/Others use '?'
+                            const separator = isIos ? '&' : '?';
+                            const link = `sms:${guardianPhone}${separator}body=${message}`;
+
+                            // PC/Desktop Feedback
+                            if (!isMobile) {
+                                const confirmed = window.confirm(
+                                    `[PC/웹 환경 시뮬레이션]\n\n실제 모바일 환경에서는 메시지 앱이 실행됩니다.\n\n수신번호: ${guardianPhone}\n내용: ${decodeURIComponent(message)}\n\n(확인을 누르면 SMS 프로토콜 실행을 시도합니다)`
+                                );
+                                if (confirmed) {
+                                    window.location.href = link;
+                                }
+                            } else {
+                                // Mobile - Execute immediately
+                                window.location.href = link;
+                            }
+                        }}
+                        className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white py-4 rounded-xl mb-3 text-sm font-bold shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <span className="animate-pulse">🆘</span> 보호자에게 SOS 문자 보내기
                     </button>
                     <button
                         onClick={() => setCurrentView('ai-chat')}

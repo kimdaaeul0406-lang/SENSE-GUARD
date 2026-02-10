@@ -12,7 +12,7 @@ import { AuthView } from '../components/AuthView';
 import { ShelterView } from '../components/ShelterView';
 import { InfoView } from '../components/InfoView';
 import { ManualView } from '../components/ManualView';
-import { MyPageView } from '../components/MyPageView';
+import { MyPageViewReloaded } from '../components/MyPageViewReloaded';
 import { AIChatView } from '../components/AIChatView';
 import { DisasterInfoView } from '../components/DisasterInfoView';
 
@@ -28,8 +28,18 @@ export default function Home() {
   const [currentView, setCurrentView] = useState('main');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  // soundLevel is used for logic but not directly rendered in the main layout in this version
-  const [, setSoundLevel] = useState(0);
+  // soundLevel is used for logic and visualization
+  const [soundLevel, setSoundLevel] = useState(0);
+
+  // Sensitivity: 0 (Low) ~ 100 (High), Default: 50
+  const [sensitivity, setSensitivity] = useState(50);
+  const sensitivityRef = useRef(50);
+
+  // Sync ref with state
+  useEffect(() => {
+    sensitivityRef.current = sensitivity;
+  }, [sensitivity]);
+
   const [micPermission, setMicPermission] = useState('pending');
   const [notifications, setNotifications] = useState(true);
   const [notificationTypes, setNotificationTypes] = useState<NotificationTypes>({
@@ -45,6 +55,52 @@ export default function Home() {
   });
 
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null);
+
+  // Guardian Phone Number - Sync with DB and LocalStorage
+  const [guardianPhone, setGuardianPhone] = useState('');
+
+  // 1. Initial Load: Try DB first, then LocalStorage
+  useEffect(() => {
+    const loadPhone = async () => {
+      // 1-1. If user is logged in, try DB
+      if (user) {
+        // Dynamically import to avoid server-side issues if any
+        const { getGuardianPhone } = await import('../lib/supabase');
+        const dbPhone = await getGuardianPhone(user.id);
+        if (dbPhone) {
+          setGuardianPhone(dbPhone);
+          localStorage.setItem('guardianPhone', dbPhone); // Sync local
+          return;
+        }
+      }
+
+      // 1-2. Fallback to LocalStorage
+      const savedPhone = localStorage.getItem('guardianPhone');
+      if (savedPhone) setGuardianPhone(savedPhone);
+    };
+    loadPhone();
+  }, [user]); // Re-run when user logs in
+
+  // 2. Save: Save to both DB (if user exists) and LocalStorage
+  useEffect(() => {
+    if (!guardianPhone) return;
+
+    // Save to LocalStorage
+    localStorage.setItem('guardianPhone', guardianPhone);
+
+    // Save to DB if user exists (Debounced slightly to avoid too many writes)
+    const saveToDb = async () => {
+      if (user) {
+        const { upsertGuardianPhone } = await import('../lib/supabase');
+        await upsertGuardianPhone(user.id, guardianPhone);
+      }
+    };
+
+    // Simple debounce via timeout
+    const timeoutId = setTimeout(saveToDb, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [guardianPhone, user]);
+
 
   // Notification History State
   const [notificationHistory, setNotificationHistory] = useState<
@@ -115,6 +171,44 @@ export default function Home() {
   const micStreamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
+  // Wake Lock Reference
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const requestWakeLock = async () => {
+    if ('wakeLock' in navigator) {
+      try {
+        const wakeLock = await navigator.wakeLock.request('screen');
+        wakeLockRef.current = wakeLock;
+        console.log('💡 Screen Wake Lock active');
+
+        wakeLock.addEventListener('release', () => {
+          console.log('💡 Screen Wake Lock released');
+        });
+      } catch (err) {
+        console.error(`${err} - Wake Lock request failed`);
+      }
+    }
+  };
+
+  const releaseWakeLock = async () => {
+    if (wakeLockRef.current) {
+      await wakeLockRef.current.release();
+      wakeLockRef.current = null;
+    }
+  };
+
+  // Re-acquire wake lock on visibility change (if it was active)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isListening) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isListening]);
+
   const requestMicPermission = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -128,7 +222,14 @@ export default function Home() {
 
   const startListening = async () => {
     const stream = await requestMicPermission();
-    if (!stream) return;
+    if (!stream) {
+      // 권한 거부 시 알림 등 처리
+      alert("마이크 권한이 필요합니다. 브라우저 설정에서 마이크 권한을 허용해주세요.");
+      return;
+    }
+
+    // Wake Lock 요청 (화면 꺼짐 방지)
+    requestWakeLock();
 
     micStreamRef.current = stream;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,6 +253,9 @@ export default function Home() {
   };
 
   const stopListening = () => {
+    // Wake Lock 해제
+    releaseWakeLock();
+
     if (micStreamRef.current) {
       micStreamRef.current.getTracks().forEach(track => track.stop());
     }
@@ -369,8 +473,18 @@ export default function Home() {
 
     const sum = dataArray.reduce((acc, val) => acc + val * val, 0);
     const rms = Math.sqrt(sum / dataArray.length);
-    // 민감도 조정: 128 (일상 소음 무시)
-    const normalizedLevel = Math.min(100, (rms / 128) * 100);
+
+    // Dynamic threshold based on sensitivity
+    // Sensitivity 50 (default) -> threshold 130 (near original 128)
+    // Sensitivity 100 -> threshold 80 (Sensitive)
+    // Sensitivity 0 -> threshold 180 (Insensitive)
+    const baseThreshold = 180 - sensitivityRef.current;
+
+    // Normalize based on dynamic threshold
+    const normalizedLevel = Math.min(100, (rms / baseThreshold) * 100);
+
+    // 시각화를 위해 상태 업데이트 (부드러운 애니메이션을 위해 약간의 보정이 필요할 수 있음)
+    setSoundLevel(normalizedLevel);
 
     // AI 분석 중이면 소리 감지 로직 건너뜀 (화면 전환 방지)
     if (!micStreamRef.current || isAnalyzingRef.current) return;
@@ -516,6 +630,7 @@ export default function Home() {
           setCurrentView={setCurrentView}
           setSidebarOpen={setSidebarOpen}
           stopListening={stopListening}
+          soundLevel={soundLevel}
         />
       )}
       {currentView === 'warning' && (
@@ -536,6 +651,7 @@ export default function Home() {
           onConfirm={handleConfirm}
           onAnalyze={analyzeAudio}
           aiAutoResult={aiAnalysisResult}
+          guardianPhone={guardianPhone}
         />
       )}
       {currentView === 'settings' && (
@@ -552,6 +668,10 @@ export default function Home() {
           setNotificationMethod={setNotificationMethod}
           notificationHistory={notificationHistory}
           onDeleteNotification={handleDeleteNotification}
+          sensitivity={sensitivity}
+          setSensitivity={setSensitivity}
+          guardianPhone={guardianPhone}
+          setGuardianPhone={setGuardianPhone}
         />
       )}
       {currentView === 'auth' && (
@@ -580,7 +700,8 @@ export default function Home() {
         />
       )}
       {currentView === 'mypage' && (
-        <MyPageView
+        <MyPageViewReloaded
+          key="mypage-v2"
           setCurrentView={setCurrentView}
           user={user}
           onLogout={handleLogout}

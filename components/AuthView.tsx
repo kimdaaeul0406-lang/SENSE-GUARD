@@ -43,7 +43,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ setCurrentView, onLoginSucce
                     setCurrentView('main');
                 }
             } catch (err) {
-                console.error(err);
+                // console.error(err);
                 setError('로그인 처리 중 오류가 발생했습니다.');
             }
         } else {
@@ -80,7 +80,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ setCurrentView, onLoginSucce
                     setCurrentView('main');
                 }
             } catch (err) {
-                console.error(err);
+                // console.error(err);
                 setError('회원가입 처리 중 오류가 발생했습니다.');
             }
         }
@@ -92,42 +92,39 @@ export const AuthView: React.FC<AuthViewProps> = ({ setCurrentView, onLoginSucce
             const user = result.user;
 
             if (user) {
-                // 1. Firebase 로그인 성공
-
-                // 2. Supabase DB에 사용자 정보 저장 (upsert)
-                // - 비밀번호는 저장하지 않음 (Firebase가 관리)
-                // - ID는 Firebase UID를 그대로 사용
-                const { error: dbError } = await supabase
-                    .from('profiles')
-                    .upsert({
-                        id: user.uid,
-                        email: user.email,
-                        name: user.displayName || 'Google 사용자',
-                        updated_at: new Date().toISOString(),
-                    }, { onConflict: 'id' });
-
-                if (dbError) {
-                    console.error("Supabase User Save Error:", dbError);
-                    // DB 저장은 실패해도 로그인은 성공 처리 (선택 사항)
-                }
-
-                // 3. 앱 로그인 상태 업데이트
+                // 1. Firebase 로그인 성공 - 즉시 화면 전환
                 const userData = {
                     id: user.uid,
                     name: user.displayName || 'Google 사용자',
                     email: user.email || '',
                 };
 
+                // UI 업데이트를 최우선으로 실행
                 onLoginSuccess(userData);
                 setCurrentView('main');
+
+                // 2. Supabase DB 저장은 백그라운드에서 실행 (결과 기다리지 않음)
+                supabase
+                    .from('profiles')
+                    .upsert({
+                        id: user.uid,
+                        email: user.email,
+                        name: user.displayName || 'Google 사용자',
+                        updated_at: new Date().toISOString(),
+                    }, { onConflict: 'id' })
+                    .then(({ error }) => {
+                        if (error) {
+                            // Silent fail
+                        }
+                    });
             }
         } catch (err) {
-            console.error("Google Login Error:", err);
+            // console.error("Google Login Error:", err);
             const firebaseError = err as { code?: string; message?: string };
             if (firebaseError.code === 'auth/popup-closed-by-user') {
-                setError('로그인 창이 닫혔습니다.');
+                // Silent fail
             } else {
-                setError('Google 로그인 실패: ' + (firebaseError.message || '알 수 없는 오류'));
+                setError('로그인에 실패했습니다. 다시 시도해주세요.');
             }
         }
     };
