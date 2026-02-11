@@ -532,6 +532,9 @@ export default function Home() {
     }
   };
 
+  // State for visual throttling
+  const lastVisualUpdateTimeRef = useRef(0);
+
   const analyzeSoundLevel = () => {
     if (!analyserRef.current) return;
 
@@ -550,12 +553,18 @@ export default function Home() {
     // Normalize based on dynamic threshold
     const normalizedLevel = Math.min(100, (rms / baseThreshold) * 100);
 
-    // 시각화를 위해 상태 업데이트 (부드러운 애니메이션을 위해 약간의 보정이 필요할 수 있음)
-    setSoundLevel(normalizedLevel);
+    // [OPTIMIZATION] Throttle React State Updates for UI
+    // Update UI only every 100ms (10fps) to prevent lag, instead of 60fps
+    const now = Date.now();
+    if (now - lastVisualUpdateTimeRef.current > 100) {
+      setSoundLevel(normalizedLevel);
+      lastVisualUpdateTimeRef.current = now;
+    }
 
     // AI 분석 중이면 소리 감지 로직 건너뜀 (화면 전환 방지)
     if (!micStreamRef.current || isAnalyzingRef.current) return;
 
+    // 소리 감지 로직은 60fps로 계속 실행 (반응 속도 유지)
     // 소리 레벨 임계값:
     // - 75 이상: 주의 상태로 전환 (조금 더 잘 반응하도록)
     // - 100: 자동 위험 전환 비활성화 (AI 분석 유도)
@@ -593,6 +602,12 @@ export default function Home() {
 
     // 분석 시작 플래그 설정 (자동 화면 전환 방지)
     isAnalyzingRef.current = true;
+
+    // [UI UX Improvement] Immediate feedback via promise wrapper isn't enough, 
+    // the component handles the "Analyzing..." UI state.
+    // However, we want to prevent UI lockup. MediaRecorder is generally async but can be heavy.
+    // We'll add a small delay to let UI update before blocking work starts.
+    await new Promise(r => setTimeout(r, 100));
 
     return new Promise<string>((resolve) => {
       try {
@@ -698,6 +713,7 @@ export default function Home() {
           setSidebarOpen={setSidebarOpen}
           stopListening={stopListening}
           soundLevel={soundLevel}
+          stream={micStreamRef.current}
         />
       )}
       {currentView === 'warning' && (

@@ -5,16 +5,78 @@ interface SafeViewProps {
     setCurrentView: (view: string) => void;
     setSidebarOpen: (open: boolean) => void;
     stopListening: () => void;
-    soundLevel?: number;
+    soundLevel?: number; // Kept for backward compatibility, but prefer stream
+    stream?: MediaStream | null; // New prop for direct visualization
 }
 
-export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, soundLevel = 0 }) => {
+export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, soundLevel = 0, stream }) => {
     const [isBlackScreen, setIsBlackScreen] = useState(false);
 
-    // Dynamic scale based on sound level (1.0 ~ 1.5)
-    // soundLevel is 0-100, normalize to 0.0-0.5 scale increase
-    const scale = 1 + (Math.min(soundLevel, 50) / 100);
-    const opacity = 0.2 + (Math.min(soundLevel, 50) / 100);
+    // Direct DOM refs for high-performance animation
+    const ring1Ref = React.useRef<HTMLDivElement>(null);
+    const ring2Ref = React.useRef<HTMLDivElement>(null);
+    const ring3Ref = React.useRef<HTMLDivElement>(null);
+
+    // Animation Loop using local AudioContext (if stream provided)
+    React.useEffect(() => {
+        if (!stream) {
+            // Fallback: If no stream, use the soundLevel prop (which might be laggy due to React re-renders)
+            // But we can manually update refs here if soundLevel changes, preventing full re-renders?
+            // No, if soundLevel is a prop, component already re-rendered.
+            return;
+        }
+
+        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+        const audioCtx = new AudioContextClass();
+        const analyser = audioCtx.createAnalyser();
+        const source = audioCtx.createMediaStreamSource(stream);
+
+        source.connect(analyser);
+        analyser.fftSize = 256;
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let animationId: number;
+
+        const renderFrame = () => {
+            analyser.getByteFrequencyData(dataArray);
+
+            // Calculate RMS (Volume)
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i] * dataArray[i];
+            }
+            const rms = Math.sqrt(sum / dataArray.length);
+
+            // Boost visual effect
+            const scale = 1 + (rms / 30);
+            const opacity = Math.min(0.8, rms / 100);
+
+            if (ring1Ref.current) {
+                ring1Ref.current.style.transform = `scale(${scale})`;
+            }
+            if (ring2Ref.current) {
+                ring2Ref.current.style.transform = `scale(${1 + (scale - 1) * 0.8})`;
+                ring2Ref.current.style.opacity = `${0.3 + opacity}`;
+            }
+            if (ring3Ref.current) {
+                ring3Ref.current.style.transform = `scale(${1 + (scale - 1) * 0.6})`;
+                ring3Ref.current.style.opacity = `${0.2 + opacity}`;
+            }
+
+            animationId = requestAnimationFrame(renderFrame);
+        };
+
+        renderFrame();
+
+        return () => {
+            cancelAnimationFrame(animationId);
+            if (audioCtx.state !== 'closed') audioCtx.close();
+        };
+    }, [stream]);
+
+    // Fallback styles if no stream (using soundLevel prop)
+    const fallbackScale = 1 + (Math.min(soundLevel, 50) / 40);
+    const fallbackOpacity = 0.2 + (Math.min(soundLevel, 50) / 100);
 
     // Black Screen (Sleep Mode) Overlay
     if (isBlackScreen) {
@@ -49,15 +111,23 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
             <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full">
                 <div className="w-full max-w-md mx-auto flex flex-col items-center mt-4">
                     <div className="relative w-40 h-40 mb-4 flex items-center justify-center">
-                        {/* Dynamic Wave Ring 1 */}
+                        {/* Ring 1 */}
                         <div
-                            className="absolute inset-0 rounded-full bg-emerald-400 transition-all duration-75 ease-out"
-                            style={{ transform: `scale(${scale})`, opacity: opacity }}
+                            ref={ring1Ref}
+                            className={`absolute inset-0 rounded-full bg-emerald-400 opacity-20 ${!stream ? 'animate-ping-slow' : ''}`}
+                            style={!stream ? { transform: `scale(${fallbackScale})`, transition: 'transform 0.1s ease-out' } : { transition: 'transform 0.05s linear' }}
                         ></div>
-                        {/* Dynamic Wave Ring 2 (Delayed/Smoother) */}
+                        {/* Ring 2 */}
                         <div
-                            className="absolute inset-0 rounded-full bg-emerald-300 transition-all duration-300 ease-out delay-75"
-                            style={{ transform: `scale(${1 + (scale - 1) * 1.5})`, opacity: opacity * 0.5 }}
+                            ref={ring2Ref}
+                            className={`absolute inset-0 rounded-full bg-emerald-400/30 ${!stream ? 'transition-all duration-75 ease-out' : ''}`}
+                            style={!stream ? { transform: `scale(${fallbackScale})`, opacity: 0.3 + fallbackOpacity } : { transition: 'transform 0.05s linear' }}
+                        ></div>
+                        {/* Ring 3 */}
+                        <div
+                            ref={ring3Ref}
+                            className={`absolute inset-0 rounded-full bg-emerald-300/20 ${!stream ? 'transition-all duration-300 ease-out delay-75' : ''}`}
+                            style={!stream ? { transform: `scale(${1 + (fallbackScale - 1) * 1.5})`, opacity: 0.2 + fallbackOpacity } : { transition: 'transform 0.05s linear' }}
                         ></div>
 
                         <div className="w-40 h-40 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-2xl relative z-10">
