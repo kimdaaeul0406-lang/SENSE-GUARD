@@ -139,21 +139,70 @@ export default function Home() {
     setNotificationHistory(prev => prev.filter(item => item.id !== id));
   };
 
+  // Flag to ensure we don't overwrite localStorage with defaults on initial render
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
+
+  // Load Settings from LocalStorage on mount
   useEffect(() => {
-    // Check Supabase Session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const savedSensitivity = localStorage.getItem('sensitivity');
+      if (savedSensitivity) setSensitivity(Number(savedSensitivity));
+
+      const savedNotifications = localStorage.getItem('notifications');
+      if (savedNotifications) setNotifications(JSON.parse(savedNotifications));
+
+      const savedNotificationTypes = localStorage.getItem('notificationTypes');
+      if (savedNotificationTypes) setNotificationTypes(JSON.parse(savedNotificationTypes));
+
+      const savedNotificationMethod = localStorage.getItem('notificationMethod');
+      if (savedNotificationMethod) setNotificationMethod(JSON.parse(savedNotificationMethod));
+    } catch (e) {
+      console.error("Failed to load settings:", e);
+    } finally {
+      setIsSettingsLoaded(true);
+    }
+  }, []);
+
+  // Save Settings to LocalStorage when changed (only after initial load)
+  useEffect(() => {
+    if (isSettingsLoaded) {
+      localStorage.setItem('sensitivity', sensitivity.toString());
+    }
+  }, [sensitivity, isSettingsLoaded]);
+
+  useEffect(() => {
+    if (isSettingsLoaded) {
+      localStorage.setItem('notifications', JSON.stringify(notifications));
+    }
+  }, [notifications, isSettingsLoaded]);
+
+  useEffect(() => {
+    if (isSettingsLoaded) {
+      localStorage.setItem('notificationTypes', JSON.stringify(notificationTypes));
+    }
+  }, [notificationTypes, isSettingsLoaded]);
+
+  useEffect(() => {
+    if (isSettingsLoaded) {
+      localStorage.setItem('notificationMethod', JSON.stringify(notificationMethod));
+    }
+  }, [notificationMethod, isSettingsLoaded]);
+
+  // Auth State Listener (Robust Session Handling)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        // Fetch profile to get name
-        // (For now, we use metadata or just part of email if profile fetch fails, but best is triggers created profiles)
         setUser({
           id: session.user.id,
           name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '사용자',
           email: session.user.email || ''
         });
+      } else {
+        setUser(null);
       }
-    };
-    checkSession();
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLoginSuccess = (userData: { id: string; name: string; email: string }) => {
