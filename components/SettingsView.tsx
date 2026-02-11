@@ -231,7 +231,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         }}
                         className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white py-4 rounded-xl mb-3 text-sm font-bold shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                     >
-                        <span className="animate-pulse">🆘</span> 보호자에게 SOS 문자 보내기
+                        <span className="animate-pulse">🆘</span> 보호자에게 긴급 SOS 문자 보내기
                     </button>
                     <button
                         onClick={() => setCurrentView('ai-chat')}

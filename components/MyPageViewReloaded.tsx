@@ -135,7 +135,12 @@ export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurre
                         <>
                             <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
                             <p className="text-sm text-gray-500 mb-4">{user.email}</p>
-
+                            <button
+                                onClick={() => alert('프로필 수정 기능은 아직 준비 중입니다. \n추후 업데이트될 예정입니다.')}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-full hover:bg-gray-200 transition-colors"
+                            >
+                                프로필 수정
+                            </button>
                         </>
                     ) : (
                         <div className="text-center">
