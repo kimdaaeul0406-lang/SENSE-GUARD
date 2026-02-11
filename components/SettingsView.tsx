@@ -186,7 +186,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-800 mb-4">보호자 연락처 설정</h3>
-                    <h3 className="text-sm font-semibold text-gray-800 mb-4">보호자 연락처 설정</h3>
                     <div className="mb-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
                         <p className="text-xs text-gray-500 mb-3">
                             비상 연락처는 마이페이지에서 통합 관리됩니다.<br />
