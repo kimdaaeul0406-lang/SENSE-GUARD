@@ -186,22 +186,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-800 mb-4">보호자 연락처 설정</h3>
-                    <div className="mb-4">
-                        <label className="block text-xs text-gray-500 mb-1">비상시 연락할 번호 (- 없이 입력)</label>
-                        <input
-                            type="tel"
-                            value={guardianPhone}
-                            onChange={(e) => setGuardianPhone(e.target.value)}
-                            placeholder="예: 01012345678"
-                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        />
+                    <h3 className="text-sm font-semibold text-gray-800 mb-4">보호자 연락처 설정</h3>
+                    <div className="mb-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-3">
+                            비상 연락처는 마이페이지에서 통합 관리됩니다.<br />
+                            (등록된 첫 번째 연락처로 SOS 문자가 발송됩니다)
+                        </p>
+                        <button
+                            onClick={() => setCurrentView('mypage')}
+                            className="w-full py-3 bg-white border border-blue-200 text-blue-600 font-bold rounded-xl text-sm hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <User size={16} />
+                            비상 연락처 관리하기
+                        </button>
                     </div>
 
                     <h3 className="text-sm font-semibold text-gray-800 mb-4 pt-2 border-t border-gray-100">도움 요청</h3>
                     <button
                         onClick={() => {
                             if (!guardianPhone) {
-                                alert('먼저 [보호자 연락처 설정]에 전화번호를 입력해주세요.');
+                                if (window.confirm('비상 연락처가 설정되지 않았습니다.\n마이페이지에서 연락처를 등록하시겠습니까?')) {
+                                    setCurrentView('mypage');
+                                }
                                 return;
                             }
 
