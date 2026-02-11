@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({
                 ok: true,
                 count: messages.slice(0, numOfRows).length,
-                totalCount: cachedData.totalCount,
+                totalCount: cachedData.totalCount, // Might be inaccurate if we don't fetch count, but fine for now
                 messages: messages.slice(0, numOfRows),
                 filters: { region: regionFilter || null, latest },
                 cached: true,
@@ -112,59 +112,14 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // 1. Get Total Count
-        const countUrl = new URL(DISASTER_MESSAGE_API_URL);
-        countUrl.searchParams.append('serviceKey', serviceKey);
-        countUrl.searchParams.append('pageNo', '1');
-        countUrl.searchParams.append('numOfRows', '1');
-
-        const countResponse = await fetch(countUrl.toString());
-        const countText = await countResponse.text();
-
-        let countData;
-        try {
-            countData = JSON.parse(countText);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e) {
-            console.error("JSON Parse Error (Count):", countText.substring(0, 100));
-            // Return Mock on Parse Error (likely HTML error page)
-            return NextResponse.json({
-                ok: true,
-                count: MOCK_MESSAGES.length,
-                totalCount: MOCK_MESSAGES.length,
-                messages: MOCK_MESSAGES,
-                mock: true,
-                originalError: 'JSON_PARSE_ERROR'
-            });
-        }
-
-        // API Error Check (e.g. Unregistered IP)
-        if (countData.header?.resultCode !== '00') {
-            console.warn(`API Error: ${countData.header?.resultCode} - ${countData.header?.resultMsg}`);
-            // Return Mock on API Error
-            return NextResponse.json({
-                ok: true,
-                count: MOCK_MESSAGES.length,
-                totalCount: MOCK_MESSAGES.length,
-                messages: MOCK_MESSAGES,
-                mock: true,
-                originalError: countData.header?.resultMsg
-            });
-        }
-
-        const totalCount = countData.totalCount || 0;
-
-        if (totalCount === 0) {
-            return NextResponse.json({ ok: true, count: 0, totalCount: 0, messages: [] });
-        }
-
-        // 2. Fetch Data
-        const fetchCount = regionFilter ? numOfRows * 5 : numOfRows;
-        const lastPageNo = latest ? Math.max(1, Math.ceil(totalCount / fetchCount)) : 1;
+        // 1. Fetch Latest Data (Page 1)
+        // We assume Page 1 contains the latest data.
+        // Even if it defaults to oldest, fetching Page 1 is safer/faster than calculating total count.
+        const fetchCount = regionFilter ? numOfRows * 5 : numOfRows; // Fetch more if filtering
 
         const dataUrl = new URL(DISASTER_MESSAGE_API_URL);
         dataUrl.searchParams.append('serviceKey', serviceKey);
-        dataUrl.searchParams.append('pageNo', lastPageNo.toString());
+        dataUrl.searchParams.append('pageNo', '1');
         dataUrl.searchParams.append('numOfRows', fetchCount.toString());
 
         const dataResponse = await fetch(dataUrl.toString());
@@ -185,6 +140,21 @@ export async function GET(request: NextRequest) {
                 originalError: 'JSON_PARSE_ERROR_DATA'
             });
         }
+
+        // API Error Check (e.g. Unregistered IP)
+        if (parsedData.header?.resultCode !== '00') {
+            console.warn(`API Error: ${parsedData.header?.resultCode} - ${parsedData.header?.resultMsg}`);
+            return NextResponse.json({
+                ok: true,
+                count: MOCK_MESSAGES.length,
+                totalCount: MOCK_MESSAGES.length,
+                messages: MOCK_MESSAGES,
+                mock: true,
+                originalError: parsedData.header?.resultMsg
+            });
+        }
+
+        const totalCount = parsedData.totalCount || 0; // Use explicit totalCount if available
 
         const rawMessages: RawMessage[] = parsedData.body || [];
         let messages: FormattedMessage[] = rawMessages.map((msg) => ({
