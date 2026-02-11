@@ -49,15 +49,29 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
             <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full">
                 <div className="w-full max-w-md mx-auto flex flex-col items-center mt-4">
                     <div className="relative w-40 h-40 mb-4 flex items-center justify-center">
-                        {/* Dynamic Wave Ring 1 */}
+                        {/* Dynamic Wave Ring 1 (Breathing + Reactive) */}
                         <div
-                            className="absolute inset-0 rounded-full bg-emerald-400 transition-all duration-75 ease-out"
-                            style={{ transform: `scale(${scale})`, opacity: opacity }}
+                            className="absolute inset-0 rounded-full bg-emerald-400 opacity-20 animate-ping-slow"
+                            style={{
+                                transform: `scale(${1 + (soundLevel / 60)})`,
+                                transition: 'transform 0.1s ease-out'
+                            }}
                         ></div>
-                        {/* Dynamic Wave Ring 2 (Delayed/Smoother) */}
+                        {/* Dynamic Wave Ring 2 (Main Reactive) */}
                         <div
-                            className="absolute inset-0 rounded-full bg-emerald-300 transition-all duration-300 ease-out delay-75"
-                            style={{ transform: `scale(${1 + (scale - 1) * 1.5})`, opacity: opacity * 0.5 }}
+                            className="absolute inset-0 rounded-full bg-emerald-400/30 transition-all duration-75 ease-out"
+                            style={{
+                                transform: `scale(${1 + (soundLevel / 40)})`,
+                                opacity: 0.3 + (soundLevel / 100)
+                            }}
+                        ></div>
+                        {/* Dynamic Wave Ring 3 (Delayed) */}
+                        <div
+                            className="absolute inset-0 rounded-full bg-emerald-300/20 transition-all duration-300 ease-out delay-75"
+                            style={{
+                                transform: `scale(${1 + (soundLevel / 30)})`,
+                                opacity: 0.2 + (soundLevel / 100)
+                            }}
                         ></div>
 
                         <div className="w-40 h-40 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-2xl relative z-10">
