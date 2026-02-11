@@ -28,7 +28,7 @@ export const WarningView: React.FC<WarningViewProps> = ({ setCurrentView, setSid
 
     return (
         <div className="h-screen overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 flex flex-col relative" suppressHydrationWarning>
-            <header className="bg-white/80 backdrop-blur-md border-b border-amber-200 px-4 py-4 flex items-center justify-between shadow-sm flex-none">
+            <header className="bg-white/80 backdrop-blur-md border-b border-amber-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20">
                 <h1 className="text-lg font-bold bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
                 <div className="flex items-center gap-2">
                     <button onClick={() => setCurrentView('settings')} className="p-2 hover:bg-amber-50 rounded-full transition-colors">

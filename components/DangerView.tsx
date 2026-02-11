@@ -34,7 +34,7 @@ export const DangerView: React.FC<DangerViewProps> = ({ setCurrentView, setSideb
 
     return (
         <div className="h-screen overflow-hidden bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 flex flex-col relative" suppressHydrationWarning>
-            <header className="bg-white/80 backdrop-blur-md border-b border-red-200 px-4 py-4 flex items-center justify-between shadow-sm flex-none">
+            <header className="bg-white/80 backdrop-blur-md border-b border-red-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20">
                 <h1 className="text-lg font-bold bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
                 <div className="flex items-center gap-2">
                     <button onClick={() => setCurrentView('settings')} className="p-2 hover:bg-red-50 rounded-full transition-colors">
