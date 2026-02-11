@@ -188,17 +188,33 @@ export default function Home() {
     }
   }, [notificationMethod, isSettingsLoaded]);
 
-  // Auth State Listener (Robust Session Handling)
+  // Optimize session check:
+  // 1. Try restoring from LocalStorage first (Instant UI).
+  // 2. Then check Supabase session (Source of Truth).
   useEffect(() => {
+    // 1. LocalStorage Check
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+
+    // 2. Supabase Auth Listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        setUser({
+        const userData = {
           id: session.user.id,
           name: session.user.user_metadata.name || session.user.email?.split('@')[0] || '사용자',
           email: session.user.email || ''
-        });
+        };
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
       } else {
-        setUser(null);
+        // Only clear if we really want to log out.
+        // If event is 'INITIAL_SESSION' and it's null, we might still have a valid local user from Firebase login.
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          localStorage.removeItem('user');
+        }
       }
     });
 
@@ -207,11 +223,13 @@ export default function Home() {
 
   const handleLoginSuccess = (userData: { id: string; name: string; email: string }) => {
     setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    localStorage.removeItem('user');
     setCurrentView('main');
   };
 
