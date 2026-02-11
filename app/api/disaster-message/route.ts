@@ -33,38 +33,74 @@ interface FormattedMessage {
     text: string;
 }
 
+// Mock Data for Fallback
+const MOCK_MESSAGES: FormattedMessage[] = [
+    {
+        sentAt: '2024/02/11 13:55:00',
+        region: '서울특별시 전체',
+        type: '안전안내',
+        level: '안전안내',
+        text: '[행정안전부] 오늘 14:00부로 서울 전역에 호우주의보가 발령되었습니다. 하천 주변 산책을 자제하시고 안전에 유의하시기 바랍니다.'
+    },
+    {
+        sentAt: '2024/02/11 11:30:00',
+        region: '경기도 성남시',
+        type: '안전안내',
+        level: '안전안내',
+        text: '[성남시청] 현재 관내 강설로 인한 도로 결빙 구간이 많습니다. 대중교통 이용 및 안전운전 바랍니다.'
+    },
+    {
+        sentAt: '2024/02/10 18:00:00',
+        region: '전국',
+        type: '안전안내',
+        level: '안전안내',
+        text: '[질병관리청] 독감 유행 주의보 발령. 손씻기 생활화 및 마스크 착용 등 개인 위생 수칙을 준수해 주세요.'
+    },
+    {
+        sentAt: '2024/02/10 09:20:00',
+        region: '강원도 강릉시',
+        type: '산불조심',
+        level: '주의',
+        text: '[산림청] 건조한 날씨로 산불 위험이 높습니다. 입산 시 인화물질 소지를 금지하고 소각 행위를 자제해 주세요.'
+    },
+    {
+        sentAt: '2024/02/09 15:10:00',
+        region: '부산광역시 해운대구',
+        type: '시설물안전',
+        level: '안전안내',
+        text: '[해운대구청] 강풍으로 인한 간판 추락 등 낙하물 사고에 유의하시기 바라며, 해안가 접근을 자제해 주세요.'
+    }
+];
+
 export async function GET(request: NextRequest) {
     const serviceKey = process.env.SAFETYDATA_SERVICE_KEY;
-
-    if (!serviceKey) {
-        return NextResponse.json(
-            {
-                ok: false,
-                error: 'SERVICE_KEY_NOT_FOUND',
-                message: '환경변수 SAFETYDATA_SERVICE_KEY가 설정되지 않았습니다.',
-            },
-            { status: 500 }
-        );
-    }
 
     try {
         const { searchParams } = new URL(request.url);
         const numOfRows = parseInt(searchParams.get('numOfRows') || '20');
-        const regionFilter = searchParams.get('region') || ''; // 지역 필터 (예: "서울", "경기")
-        const latest = searchParams.get('latest') !== 'false'; // 기본값: 최신순
-        const forceRefresh = searchParams.get('force') === 'true'; // 강제 새로고침
+        const regionFilter = searchParams.get('region') || '';
+        const latest = searchParams.get('latest') !== 'false';
+        const forceRefresh = searchParams.get('force') === 'true';
+        const useMock = searchParams.get('mock') === 'true';
 
-        // ⚡ 캐시 확인 (30분 이내면 캐시된 데이터 반환, force=true면 무시)
+        // 🟢 If mock requested or service key missing, return mock data
+        if (useMock || !serviceKey) {
+            console.log('⚠️ Using Mock Data (Explicit or No Key)');
+            return NextResponse.json({
+                ok: true,
+                count: MOCK_MESSAGES.length,
+                totalCount: MOCK_MESSAGES.length,
+                messages: MOCK_MESSAGES,
+                mock: true
+            });
+        }
+
+        // ⚡ Cache Check
         const now = Date.now();
         if (!forceRefresh && cachedData && (now - cacheTimestamp) < CACHE_DURATION_MS) {
             console.log('📦 캐시된 재난문자 데이터 반환');
             let messages = cachedData.messages;
-
-            // 지역 필터 적용
-            if (regionFilter) {
-                messages = messages.filter(msg => msg.region.includes(regionFilter));
-            }
-
+            if (regionFilter) messages = messages.filter(msg => msg.region.includes(regionFilter));
             return NextResponse.json({
                 ok: true,
                 count: messages.slice(0, numOfRows).length,
@@ -76,7 +112,7 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // 1단계: totalCount 확인을 위한 첫 번째 요청
+        // 1. Get Total Count
         const countUrl = new URL(DISASTER_MESSAGE_API_URL);
         countUrl.searchParams.append('serviceKey', serviceKey);
         countUrl.searchParams.append('pageNo', '1');
@@ -88,37 +124,42 @@ export async function GET(request: NextRequest) {
         let countData;
         try {
             countData = JSON.parse(countText);
-        } catch {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) {
+            console.error("JSON Parse Error (Count):", countText.substring(0, 100));
+            // Return Mock on Parse Error (likely HTML error page)
             return NextResponse.json({
-                ok: false,
-                error: 'PARSE_ERROR',
-                message: 'API 응답을 파싱할 수 없습니다.',
-            }, { status: 500 });
+                ok: true,
+                count: MOCK_MESSAGES.length,
+                totalCount: MOCK_MESSAGES.length,
+                messages: MOCK_MESSAGES,
+                mock: true,
+                originalError: 'JSON_PARSE_ERROR'
+            });
         }
 
-        // API 에러 체크
+        // API Error Check (e.g. Unregistered IP)
         if (countData.header?.resultCode !== '00') {
+            console.warn(`API Error: ${countData.header?.resultCode} - ${countData.header?.resultMsg}`);
+            // Return Mock on API Error
             return NextResponse.json({
-                ok: false,
-                error: countData.header?.resultCode || 'UNKNOWN_ERROR',
-                message: countData.header?.resultMsg || '알 수 없는 오류',
-            }, { status: 500 });
+                ok: true,
+                count: MOCK_MESSAGES.length,
+                totalCount: MOCK_MESSAGES.length,
+                messages: MOCK_MESSAGES,
+                mock: true,
+                originalError: countData.header?.resultMsg
+            });
         }
 
         const totalCount = countData.totalCount || 0;
 
         if (totalCount === 0) {
-            return NextResponse.json({
-                ok: true,
-                count: 0,
-                totalCount: 0,
-                messages: [],
-            });
+            return NextResponse.json({ ok: true, count: 0, totalCount: 0, messages: [] });
         }
 
-        // 2단계: 최신 데이터를 가져오기 위해 마지막 페이지 계산
-        // 더 많은 데이터를 가져와서 필터링 후 원하는 개수만큼 반환
-        const fetchCount = regionFilter ? numOfRows * 5 : numOfRows; // 필터 있으면 더 많이 가져옴
+        // 2. Fetch Data
+        const fetchCount = regionFilter ? numOfRows * 5 : numOfRows;
         const lastPageNo = latest ? Math.max(1, Math.ceil(totalCount / fetchCount)) : 1;
 
         const dataUrl = new URL(DISASTER_MESSAGE_API_URL);
@@ -132,15 +173,19 @@ export async function GET(request: NextRequest) {
         let parsedData;
         try {
             parsedData = JSON.parse(dataText);
-        } catch {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) {
+            console.error("JSON Parse Error (Data):", dataText.substring(0, 100));
             return NextResponse.json({
-                ok: false,
-                error: 'PARSE_ERROR',
-                message: 'API 응답을 파싱할 수 없습니다.',
-            }, { status: 500 });
+                ok: true,
+                count: MOCK_MESSAGES.length,
+                totalCount: MOCK_MESSAGES.length,
+                messages: MOCK_MESSAGES,
+                mock: true,
+                originalError: 'JSON_PARSE_ERROR_DATA'
+            });
         }
 
-        // 메시지 가공
         const rawMessages: RawMessage[] = parsedData.body || [];
         let messages: FormattedMessage[] = rawMessages.map((msg) => ({
             sentAt: msg.CRT_DT || '',
@@ -150,7 +195,6 @@ export async function GET(request: NextRequest) {
             text: msg.MSG_CN || '',
         }));
 
-        // 최신순 정렬 (날짜 내림차순)
         if (latest) {
             messages = messages.sort((a, b) => {
                 const dateA = new Date(a.sentAt.replace(/\//g, '-'));
@@ -159,19 +203,13 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // ⚡ 캐시에 저장 (필터 적용 전 전체 데이터)
         cachedData = { messages: [...messages], totalCount };
         cacheTimestamp = Date.now();
-        console.log('💾 재난문자 데이터 캐시 저장 완료');
 
-        // 지역 필터 적용
         if (regionFilter) {
-            messages = messages.filter(msg =>
-                msg.region.includes(regionFilter)
-            );
+            messages = messages.filter(msg => msg.region.includes(regionFilter));
         }
 
-        // 요청한 개수만큼 자르기
         messages = messages.slice(0, numOfRows);
 
         return NextResponse.json({
@@ -179,20 +217,20 @@ export async function GET(request: NextRequest) {
             count: messages.length,
             totalCount,
             messages,
-            filters: {
-                region: regionFilter || null,
-                latest,
-            }
+            filters: { region: regionFilter || null, latest }
         });
+
     } catch (error) {
-        return NextResponse.json(
-            {
-                ok: false,
-                error: 'FETCH_ERROR',
-                message: error instanceof Error ? error.message : '알 수 없는 오류',
-            },
-            { status: 500 }
-        );
+        console.error("API Route Exception:", error);
+        // Return Mock on Exception
+        return NextResponse.json({
+            ok: true,
+            count: MOCK_MESSAGES.length,
+            totalCount: MOCK_MESSAGES.length,
+            messages: MOCK_MESSAGES,
+            mock: true,
+            originalError: error instanceof Error ? error.message : 'UNKNOWN_EXCEPTION'
+        });
     }
 }
 
