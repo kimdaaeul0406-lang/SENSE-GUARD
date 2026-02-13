@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
         // 1. Fetch Latest Data (Page 1)
         // We assume Page 1 contains the latest data.
         // Even if it defaults to oldest, fetching Page 1 is safer/faster than calculating total count.
-        const fetchCount = regionFilter ? numOfRows * 5 : numOfRows; // Fetch more if filtering
+        const fetchCount = regionFilter ? numOfRows * 10 : numOfRows * 5; // Fetch more data to ensure we get recent ones (100~200 items)
 
         const dataUrl = new URL(DISASTER_MESSAGE_API_URL);
         dataUrl.searchParams.append('serviceKey', serviceKey);
