@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ShieldCheck, Menu, Settings, Moon, Sun } from 'lucide-react';
+import React from 'react';
+import { ShieldCheck, Menu, Settings } from 'lucide-react';
 
 interface SafeViewProps {
     setCurrentView: (view: string) => void;
@@ -10,7 +10,6 @@ interface SafeViewProps {
 }
 
 export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, soundLevel = 0, stream }) => {
-    const [isBlackScreen, setIsBlackScreen] = useState(false);
 
     // Direct DOM ref for high-performance animation
     const glowRef = React.useRef<HTMLDivElement>(null);
@@ -50,7 +49,7 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
 
             if (glowRef.current) {
                 glowRef.current.style.transform = `scale(${scale})`;
-                glowRef.current.style.opacity = `${opacity} `;
+                glowRef.current.style.opacity = `${opacity}`;
             }
 
             animationId = requestAnimationFrame(renderFrame);
@@ -63,24 +62,6 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
             if (audioCtx.state !== 'closed') audioCtx.close();
         };
     }, [stream]);
-
-
-
-    // Black Screen (Sleep Mode) Overlay
-    if (isBlackScreen) {
-        return (
-            <div
-                className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer"
-                onClick={() => setIsBlackScreen(false)}
-            >
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-20">
-                    <ShieldCheck size={60} className="text-emerald-500 mb-4 animate-pulse" />
-                    <p className="text-emerald-500 text-sm font-medium">SENSE-GUARD 작동 중</p>
-                    <p className="text-emerald-500/60 text-xs mt-1">화면을 터치하면 해제됩니다</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex flex-col">
@@ -111,7 +92,7 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                         {/* Ambient Glow Background */}
                         <div
                             ref={glowRef}
-                            className={`absolute w - 48 h - 48 rounded - full bg - emerald - 400 / 40 filter blur - [60px] transition - all duration - 100 ${!stream ? 'animate-pulse' : ''} `}
+                            className={`absolute w-48 h-48 rounded-full bg-emerald-400/40 filter blur-[60px] transition-all duration-100 ${!stream ? 'animate-pulse' : ''}`}
                             style={{
                                 transform: !stream ? 'scale(1)' : undefined
                             }}
@@ -137,15 +118,6 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                     </p>
 
                     <div className="w-full flex flex-col gap-3 mb-4">
-                        <button
-                            onClick={() => setIsBlackScreen(true)}
-                            className="w-full bg-gray-900 text-emerald-400 py-4 rounded-xl text-sm font-bold shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2 group border border-emerald-900/30"
-                        >
-                            <Moon size={18} className="group-hover:animate-pulse" />
-                            화면 끄기 모드 (감지 유지)
-                            <span className="text-[10px] bg-emerald-900/50 px-1.5 py-0.5 rounded text-emerald-300 ml-1">배터리 절약</span>
-                        </button>
-
                         <button
                             onClick={stopListening}
                             className="w-full bg-white text-emerald-600 border-2 border-emerald-500 py-3 rounded-xl text-sm font-semibold shadow-lg hover:bg-emerald-50 transition-all"

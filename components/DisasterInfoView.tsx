@@ -24,6 +24,7 @@ interface FireApiItem {
 
 interface DisasterInfoViewProps {
     setCurrentView: (view: string) => void;
+    onBack?: () => void;
 }
 
 interface DisasterMessage {
@@ -47,7 +48,7 @@ interface FireInfo {
     cause: string;
 }
 
-export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentView }) => {
+export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentView, onBack }) => {
     const [activeTab, setActiveTab] = useState<'disaster' | 'weather' | 'fire'>('disaster');
     const [loading, setLoading] = useState(false);
 
@@ -196,7 +197,7 @@ export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentVi
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <header className="bg-white px-4 py-4 flex items-center justify-between border-b border-gray-200 sticky top-0 z-10">
-                <button onClick={() => setCurrentView('main')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <button onClick={() => onBack ? onBack() : setCurrentView('main')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                     <ArrowLeft size={24} className="text-gray-700" />
                 </button>
                 <h1 className="text-lg font-bold text-gray-800">재난 정보 센터</h1>

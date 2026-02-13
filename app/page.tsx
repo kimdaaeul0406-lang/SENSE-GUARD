@@ -147,14 +147,7 @@ export default function Home() {
     try {
       const savedSensitivity = localStorage.getItem('sensitivity');
       if (savedSensitivity) {
-        const val = Number(savedSensitivity);
-        // 마이그레이션: 이전 기본값(50)이면 새 기본값(65)으로 업데이트
-        if (val === 50) {
-          setSensitivity(65);
-          localStorage.setItem('sensitivity', '65');
-        } else {
-          setSensitivity(val);
-        }
+        setSensitivity(Number(savedSensitivity));
       }
 
       const savedNotifications = localStorage.getItem('notifications');
@@ -165,14 +158,7 @@ export default function Home() {
 
       const savedNotificationMethod = localStorage.getItem('notificationMethod');
       if (savedNotificationMethod) {
-        const parsed = JSON.parse(savedNotificationMethod);
-        // 마이그레이션: 이전에 vibration/sound가 false였으면 true로 업데이트
-        if (parsed.vibration === false || parsed.sound === false) {
-          parsed.vibration = true;
-          parsed.sound = true;
-          localStorage.setItem('notificationMethod', JSON.stringify(parsed));
-        }
-        setNotificationMethod(parsed);
+        setNotificationMethod(JSON.parse(savedNotificationMethod));
       }
     } catch (e) {
       console.error("Failed to load settings:", e);
@@ -794,8 +780,8 @@ export default function Home() {
   };
 
   const handleBackFromSubView = () => {
-    // If mic is on, go to safe view (watcher will upgrade to warning/danger if still loud)
-    if (micStreamRef.current) {
+    // If actively listening, go to safe view (watcher will upgrade to warning/danger if still loud)
+    if (isListening) {
       setCurrentView('safe');
       currentViewRef.current = 'safe'; // Sync ref
     } else {
@@ -812,6 +798,7 @@ export default function Home() {
         setCurrentView={setCurrentView}
         user={user}
         onLogout={handleLogout}
+        isListening={isListening}
       />
 
       {currentView === 'main' && (
@@ -889,6 +876,7 @@ export default function Home() {
         <InfoView
           setCurrentView={setCurrentView}
           type={currentView as 'intro' | 'terms' | 'help' | 'how-it-works'}
+          onBack={handleBackFromSubView}
         />
       )}
       {currentView === 'manual' && (
@@ -903,13 +891,14 @@ export default function Home() {
           setCurrentView={setCurrentView}
           user={user}
           onLogout={handleLogout}
+          onBack={handleBackFromSubView}
         />
       )}
       {currentView === 'ai-chat' && (
-        <AIChatView setCurrentView={setCurrentView} />
+        <AIChatView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
       )}
       {currentView === 'disaster-info' && (
-        <DisasterInfoView setCurrentView={setCurrentView} />
+        <DisasterInfoView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
       )}
 
       <style jsx>{`

@@ -36,6 +36,7 @@ function renderMarkdown(text: string): string {
 
 interface AIChatViewProps {
     setCurrentView: (view: string) => void;
+    onBack?: () => void;
 }
 
 interface Message {
@@ -45,7 +46,7 @@ interface Message {
     timestamp: Date;
 }
 
-export const AIChatView: React.FC<AIChatViewProps> = ({ setCurrentView }) => {
+export const AIChatView: React.FC<AIChatViewProps> = ({ setCurrentView, onBack }) => {
     const [messages, setMessages] = useState<Message[]>([
         {
             id: 0,
@@ -151,7 +152,7 @@ export const AIChatView: React.FC<AIChatViewProps> = ({ setCurrentView }) => {
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center gap-4 shadow-sm">
                 <button
-                    onClick={() => setCurrentView('main')}
+                    onClick={() => onBack ? onBack() : setCurrentView('main')}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                     <ArrowLeft size={22} className="text-gray-700" />

@@ -9,9 +9,10 @@ export interface MyPageViewReloadedProps {
     setCurrentView: (view: string) => void;
     user: { id: string; name: string; email: string } | null;
     onLogout: () => void;
+    onBack?: () => void;
 }
 
-export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurrentView, user, onLogout }) => {
+export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurrentView, user, onLogout, onBack }) => {
     const [contacts, setContacts] = useState<{ id: string; name: string; phone: string }[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -118,7 +119,7 @@ export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurre
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <header className="bg-white px-4 py-4 flex items-center justify-between border-b border-gray-200 sticky top-0 z-10">
-                <button onClick={() => setCurrentView('main')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <button onClick={() => onBack ? onBack() : setCurrentView('main')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                     <ArrowLeft size={24} className="text-gray-700" />
                 </button>
                 <h1 className="text-lg font-bold text-gray-800">마이페이지</h1>
@@ -134,13 +135,7 @@ export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurre
                     {user ? (
                         <>
                             <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
-                            <p className="text-sm text-gray-500 mb-4">{user.email}</p>
-                            <button
-                                onClick={() => alert('프로필 수정 기능은 아직 준비 중입니다. \n추후 업데이트될 예정입니다.')}
-                                className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-full hover:bg-gray-200 transition-colors"
-                            >
-                                프로필 수정
-                            </button>
+                            <p className="text-sm text-gray-500 mb-2">{user.email}</p>
                         </>
                     ) : (
                         <div className="text-center">

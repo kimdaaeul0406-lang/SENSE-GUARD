@@ -6,9 +6,10 @@ interface SidebarProps {
     setCurrentView: (view: string) => void;
     user?: { name: string; email: string } | null;
     onLogout?: () => void;
+    isListening?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, setCurrentView, user, onLogout }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, setCurrentView, user, onLogout, isListening }) => {
     const handleNavigation = (view: string) => {
         setCurrentView(view);
         onClose();
@@ -26,7 +27,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, setCurrentVie
             <div className={`absolute top-0 right-0 bottom-0 w-72 bg-white shadow-2xl z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-6 h-full overflow-y-auto">
                     <div className="mb-8 border-b border-gray-100 pb-6">
-                        <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent mb-2">
+                        <h1
+                            onClick={() => handleNavigation(isListening ? 'safe' : 'main')}
+                            className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent mb-2 cursor-pointer hover:opacity-80 transition-opacity inline-block"
+                        >
                             SENSE-GUARD
                         </h1>
                         {user ? (

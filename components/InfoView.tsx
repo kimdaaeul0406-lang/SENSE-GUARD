@@ -4,6 +4,7 @@ import { ArrowLeft, Mic, Cpu, Bell, Shield } from 'lucide-react';
 interface InfoViewProps {
     setCurrentView: (view: string) => void;
     type: 'intro' | 'how-it-works' | 'terms' | 'help';
+    onBack?: () => void;
 }
 
 // Content 타입 정의
@@ -27,7 +28,7 @@ interface ContentData {
     text?: string;
 }
 
-export const InfoView: React.FC<InfoViewProps> = ({ setCurrentView, type }) => {
+export const InfoView: React.FC<InfoViewProps> = ({ setCurrentView, type, onBack }) => {
 
     // Content Data
     const content: Record<string, ContentData> = {
@@ -72,7 +73,7 @@ export const InfoView: React.FC<InfoViewProps> = ({ setCurrentView, type }) => {
     return (
         <div className="min-h-screen bg-white flex flex-col">
             <header className="px-4 py-4 flex items-center justify-between border-b border-gray-100 sticky top-0 bg-white z-10">
-                <button onClick={() => setCurrentView('main')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <button onClick={() => onBack ? onBack() : setCurrentView('main')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                     <ArrowLeft size={24} className="text-gray-700" />
                 </button>
                 <h1 className="text-lg font-bold text-gray-800">{data.title}</h1>
