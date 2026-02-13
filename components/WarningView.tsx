@@ -42,8 +42,19 @@ export const WarningView: React.FC<WarningViewProps> = ({ setCurrentView, setSid
 
             <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full">
                 <div className="w-full max-w-md mx-auto flex flex-col items-center">
-                    <div className="w-40 h-40 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full mb-4 flex items-center justify-center shadow-2xl animate-pulse-slow flex-shrink-0">
-                        <AlertCircle size={80} className="text-white" strokeWidth={2} />
+                    <div className="relative w-64 h-64 mb-4 flex items-center justify-center">
+                        {/* Ambient Glow Background */}
+                        <div className="absolute w-48 h-48 rounded-full bg-amber-400/40 filter blur-[60px] animate-pulse"></div>
+
+                        {/* Main Icon Container - Glassmorphism Style */}
+                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-amber-500/10 z-10">
+                            <div className="absolute inset-2 rounded-[2rem] border border-white/30 bg-gradient-to-br from-amber-50/50 to-amber-100/10" />
+                            <AlertCircle size={72} className="text-amber-500 relative z-20 drop-shadow-sm" strokeWidth={1.5} />
+
+                            {/* Status Indicator Dot */}
+                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-amber-500 rounded-full animate-ping z-20 opacity-75"></div>
+                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-amber-500 rounded-full z-20"></div>
+                        </div>
                     </div>
 
                     <h2 className="text-2xl font-bold text-amber-600 mb-1">주의</h2>

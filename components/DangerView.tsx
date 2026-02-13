@@ -48,8 +48,19 @@ export const DangerView: React.FC<DangerViewProps> = ({ setCurrentView, setSideb
 
             <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full">
                 <div className="w-full max-w-md mx-auto flex flex-col items-center">
-                    <div className="w-40 h-40 bg-gradient-to-br from-red-500 to-rose-600 rounded-full mb-4 flex items-center justify-center shadow-2xl animate-pulse-fast">
-                        <AlertTriangle size={80} className="text-white" strokeWidth={2} />
+                    <div className="relative w-64 h-64 mb-4 flex items-center justify-center">
+                        {/* Ambient Glow Background */}
+                        <div className="absolute w-48 h-48 rounded-full bg-red-500/40 filter blur-[60px] animate-pulse"></div>
+
+                        {/* Main Icon Container - Glassmorphism Style */}
+                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-red-500/10 z-10">
+                            <div className="absolute inset-2 rounded-[2rem] border border-white/30 bg-gradient-to-br from-red-50/50 to-red-100/10" />
+                            <AlertTriangle size={72} className="text-red-500 relative z-20 drop-shadow-sm" strokeWidth={1.5} />
+
+                            {/* Status Indicator Dot - faster ping for danger */}
+                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-red-500 rounded-full animate-ping z-20 opacity-75"></div>
+                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-red-500 rounded-full z-20"></div>
+                        </div>
                     </div>
 
                     <h2 className="text-2xl font-bold text-red-600 mb-1">위험</h2>

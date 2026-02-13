@@ -31,9 +31,9 @@ export default function Home() {
   // soundLevel is used for logic and visualization
   const [soundLevel, setSoundLevel] = useState(0);
 
-  // Sensitivity: 0 (Low) ~ 100 (High), Default: 50
-  const [sensitivity, setSensitivity] = useState(50);
-  const sensitivityRef = useRef(50);
+  // Sensitivity: 0 (Low) ~ 100 (High), Default: 65
+  const [sensitivity, setSensitivity] = useState(65);
+  const sensitivityRef = useRef(65);
 
   // Sync ref with state
   useEffect(() => {
@@ -608,10 +608,10 @@ export default function Home() {
     const rms = Math.sqrt(sum / dataArray.length);
 
     // Dynamic threshold based on sensitivity
-    // Sensitivity 50 (default) -> threshold 130 (near original 128)
-    // Sensitivity 100 -> threshold 80 (Sensitive)
-    // Sensitivity 0 -> threshold 180 (Insensitive)
-    const baseThreshold = 180 - sensitivityRef.current;
+    // Sensitivity 65 (default) -> threshold 85
+    // Sensitivity 100 -> threshold 50 (Very Sensitive)
+    // Sensitivity 0 -> threshold 150 (Insensitive)
+    const baseThreshold = 150 - sensitivityRef.current;
 
     // Normalize based on dynamic threshold
     const normalizedLevel = Math.min(100, (rms / baseThreshold) * 100);
@@ -629,18 +629,15 @@ export default function Home() {
 
     // 소리 감지 로직은 60fps로 계속 실행 (반응 속도 유지)
     // 소리 레벨 임계값:
-    // - 75 이상: 주의 상태로 전환 (조금 더 잘 반응하도록)
-    // - 100: 자동 위험 전환 비활성화 (AI 분석 유도)
-    if (normalizedLevel > 75) {
+    // - 50 이상: 주의 상태로 전환 (외부 사이렌 소리도 감지 가능하도록)
+    // - AI 분석을 통해 실제 위험 여부 판단
+    if (normalizedLevel > 50) {
       if (currentViewRef.current !== 'danger' && currentViewRef.current !== 'warning') {
         updateViewWithHysteresis('warning');
         // 주의 상태 진입 시 자동 AI 분석 실행
         performAiAnalysis();
       }
       lastLoudTimeRef.current = Date.now(); // 시끄러운 시간 기록
-    } else if (normalizedLevel > 100 && currentViewRef.current !== 'danger') {
-      // (Disabled logic kept for structure, but effectively unreachable due to if above)
-      updateViewWithHysteresis('danger');
     }
 
     // 자동 복귀 로직 (Auto Reset)
