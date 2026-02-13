@@ -12,17 +12,12 @@ interface SafeViewProps {
 export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, soundLevel = 0, stream }) => {
     const [isBlackScreen, setIsBlackScreen] = useState(false);
 
-    // Direct DOM refs for high-performance animation
-    const ring1Ref = React.useRef<HTMLDivElement>(null);
-    const ring2Ref = React.useRef<HTMLDivElement>(null);
-    const ring3Ref = React.useRef<HTMLDivElement>(null);
+    // Direct DOM ref for high-performance animation
+    const glowRef = React.useRef<HTMLDivElement>(null);
 
     // Animation Loop using local AudioContext (if stream provided)
     React.useEffect(() => {
         if (!stream) {
-            // Fallback: If no stream, use the soundLevel prop (which might be laggy due to React re-renders)
-            // But we can manually update refs here if soundLevel changes, preventing full re-renders?
-            // No, if soundLevel is a prop, component already re-rendered.
             return;
         }
 
@@ -48,19 +43,14 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
             const rms = Math.sqrt(sum / dataArray.length);
 
             // Boost visual effect
-            const scale = 1 + (rms / 30);
-            const opacity = Math.min(0.8, rms / 100);
+            // Scale: 1 ~ 1.5
+            const scale = 1 + (rms / 60);
+            // Opacity: 0.3 ~ 0.8
+            const opacity = 0.3 + (rms / 150);
 
-            if (ring1Ref.current) {
-                ring1Ref.current.style.transform = `scale(${scale})`;
-            }
-            if (ring2Ref.current) {
-                ring2Ref.current.style.transform = `scale(${1 + (scale - 1) * 0.8})`;
-                ring2Ref.current.style.opacity = `${0.3 + opacity}`;
-            }
-            if (ring3Ref.current) {
-                ring3Ref.current.style.transform = `scale(${1 + (scale - 1) * 0.6})`;
-                ring3Ref.current.style.opacity = `${0.2 + opacity}`;
+            if (glowRef.current) {
+                glowRef.current.style.transform = `scale(${scale})`;
+                glowRef.current.style.opacity = `${opacity}`;
             }
 
             animationId = requestAnimationFrame(renderFrame);
@@ -74,9 +64,7 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
         };
     }, [stream]);
 
-    // Fallback styles if no stream (using soundLevel prop)
-    const fallbackScale = 1 + (Math.min(soundLevel, 50) / 40);
-    const fallbackOpacity = 0.2 + (Math.min(soundLevel, 50) / 100);
+
 
     // Black Screen (Sleep Mode) Overlay
     if (isBlackScreen) {
@@ -86,7 +74,7 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                 onClick={() => setIsBlackScreen(false)}
             >
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-20">
-                    <ShieldCheck size={60} className="text-emerald-500 mb-4 animate-pulse-slow" />
+                    <ShieldCheck size={60} className="text-emerald-500 mb-4 animate-pulse" />
                     <p className="text-emerald-500 text-sm font-medium">SENSE-GUARD 작동 중</p>
                     <p className="text-emerald-500/60 text-xs mt-1">화면을 터치하면 해제됩니다</p>
                 </div>
@@ -110,28 +98,26 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
 
             <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full">
                 <div className="w-full max-w-md mx-auto flex flex-col items-center mt-4">
-                    <div className="relative w-40 h-40 mb-4 flex items-center justify-center">
-                        {/* Ring 1 */}
+                    <div className="relative w-64 h-64 mb-4 flex items-center justify-center">
+                        {/* Ambient Glow Background */}
                         <div
-                            ref={ring1Ref}
-                            className={`absolute inset-0 rounded-full bg-emerald-400 opacity-20 ${!stream ? 'animate-ping-slow' : ''}`}
-                            style={!stream ? { transform: `scale(${fallbackScale})`, transition: 'transform 0.1s ease-out' } : { transition: 'transform 0.05s linear' }}
-                        ></div>
-                        {/* Ring 2 */}
-                        <div
-                            ref={ring2Ref}
-                            className={`absolute inset-0 rounded-full bg-emerald-400/30 ${!stream ? 'transition-all duration-75 ease-out' : ''}`}
-                            style={!stream ? { transform: `scale(${fallbackScale})`, opacity: 0.3 + fallbackOpacity } : { transition: 'transform 0.05s linear' }}
-                        ></div>
-                        {/* Ring 3 */}
-                        <div
-                            ref={ring3Ref}
-                            className={`absolute inset-0 rounded-full bg-emerald-300/20 ${!stream ? 'transition-all duration-300 ease-out delay-75' : ''}`}
-                            style={!stream ? { transform: `scale(${1 + (fallbackScale - 1) * 1.5})`, opacity: 0.2 + fallbackOpacity } : { transition: 'transform 0.05s linear' }}
+                            ref={glowRef}
+                            className={`absolute w-48 h-48 rounded-full bg-emerald-400/40 filter blur-[60px] transition-all duration-100 ${!stream ? 'animate-pulse' : ''}`}
+                            style={{
+                                transform: !stream ? 'scale(1)' : undefined
+                            }}
                         ></div>
 
-                        <div className="w-40 h-40 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-2xl relative z-10">
-                            <ShieldCheck size={80} className="text-white" strokeWidth={2} />
+                        {/* Main Shield Container - Glassmorphism Style */}
+                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-emerald-500/10 z-10 transition-transform duration-300">
+                            {/* Inner detail for premium look */}
+                            <div className="absolute inset-2 rounded-[2rem] border border-white/30 bg-gradient-to-br from-emerald-50/50 to-emerald-100/10" />
+
+                            <ShieldCheck size={72} className="text-emerald-500 relative z-20 drop-shadow-sm" strokeWidth={1.5} />
+
+                            {/* Status Indicator Dot */}
+                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-emerald-500 rounded-full animate-ping z-20 opacity-75"></div>
+                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-emerald-500 rounded-full z-20"></div>
                         </div>
                     </div>
 

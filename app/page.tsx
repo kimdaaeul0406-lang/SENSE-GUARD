@@ -50,8 +50,8 @@ export default function Home() {
   });
   const [notificationMethod, setNotificationMethod] = useState({
     screen: true,
-    vibration: false,
-    sound: false
+    vibration: true,
+    sound: true
   });
 
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null);
@@ -238,6 +238,57 @@ export default function Home() {
   const micStreamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
+  // Service Worker Registration + Notification Permission
+  useEffect(() => {
+    // Service Worker 등록
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        console.log('✅ Service Worker 등록 성공:', reg.scope);
+      }).catch((err) => {
+        console.error('❌ Service Worker 등록 실패:', err);
+      });
+    }
+
+    // 알림 권한 요청
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then((permission) => {
+        console.log('🔔 알림 권한:', permission);
+      });
+    }
+  }, []);
+
+  // 시스템 알림 보내기 (다른 앱/탭 사용 중에도 표시)
+  const sendSystemNotification = (title: string, body: string, isUrgent: boolean = false) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const options: any = {
+        body,
+        icon: '/favicon.svg',
+        badge: '/favicon.svg',
+        tag: 'sense-guard-alert',
+        renotify: true,
+        requireInteraction: isUrgent,
+      };
+
+      // Service Worker가 있으면 SW를 통해 알림 (PWA 앱에서 더 안정적)
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification(title, {
+            ...options,
+            vibrate: isUrgent ? [500, 200, 500, 200, 500] : [200, 100, 200],
+            actions: [
+              { action: 'open', title: '확인하기' },
+              { action: 'dismiss', title: '닫기' }
+            ]
+          });
+        });
+      } else {
+        // Fallback: 일반 Notification API
+        new Notification(title, options);
+      }
+    }
+  };
+
   // Wake Lock Reference
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
@@ -388,6 +439,18 @@ export default function Home() {
       } catch (e) {
         console.error("Audio notification failed", e);
       }
+    }
+
+    // 3. 시스템 알림 (다른 앱/탭에 있을 때도 알려줌)
+    if (notificationMethod.screen) {
+      const isDanger = view === 'danger';
+      sendSystemNotification(
+        isDanger ? '🚨 위험 감지!' : '⚠️ 주의 필요',
+        isDanger
+          ? '위험한 소리가 감지되었습니다! 즉시 확인하세요.'
+          : '주변에서 큰 소리가 감지되었습니다. 확인해 보세요.',
+        isDanger
+      );
     }
   };
 

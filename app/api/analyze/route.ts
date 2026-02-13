@@ -35,11 +35,9 @@ export async function POST(req: NextRequest) {
         console.log("Audio Size:", audioFile.size);
 
         const prompt = `You are the AI engine for 'SENSE-GUARD', a disaster prevention app.
-Listen to the attached audio snippet (3 seconds).
+Listen to the attached audio snippet (3-5 seconds).
 
-CONTEXT: The specific device sensor has ALREADY detected a VERY LOUD NOISE (> 90dB). 
-However, the recorded audio might sound quieter due to distance or mobile microphone limitations.
-Trust the sensor: A loud event DID occur. Your job is to identify WHAT it was.
+CONTEXT: The device sensor detected a loud noise. Your job is to classify WHAT made the sound.
 
 Return the response strictly in the following JSON format (no markdown, no code blocks):
 {
@@ -48,19 +46,34 @@ Return the response strictly in the following JSON format (no markdown, no code 
     "action": "Short action advice (in Korean)"
 }
 
-Criteria:
-- DANGER: **Fire Alarm**, **Siren**, **Emergency Bell**, **Smoke Detector Beep**, **Explosion**.
-  (RULE: If you hear ANY siren-like or alarm-like sound, classify as DANGER immediately. Do not hesitate.)
-- WARNING: Screaming, aggressive shouting, glass breaking, dog barking aggressively.
-- SAFE: Coughing, sneezing, typing, object dropping (thud), door closing, talking, music, clapping, traffic noise.
+=== CLASSIFICATION RULES (STRICT) ===
 
-**IMPORTANT decision rules**: 
-1. **Fire Alarm / Siren** -> **DANGER** (High Priority). Even if it sounds faint or distant.
-2. **Coughing / Sneezing / Typing** -> **SAFE**. (Ignore these common sounds).
-3. **Screaming** -> **WARNING** (or DANGER if it sounds like a real emergency).
-4. If the sound is clearly an alarm or siren, return "DANGER".
-5. If it is just a loud bang or noise but NOT an alarm, return "WARNING".
-6. If it is human conversation or cough, return "SAFE".
+**DANGER** (only these):
+- Fire Alarm (continuous repeating beep at fixed interval)
+- Emergency Siren (rising and falling single tone, NO melody)
+- Smoke Detector (high-pitched rapid beeping)
+- Explosion sound
+
+**WARNING**:
+- Screaming / aggressive shouting
+- Glass breaking
+- Aggressive dog barking
+
+**SAFE** (these are NEVER dangerous):
+- Music, songs, melodies, beats, instruments (ANY music = SAFE, even if loud)
+- Human conversation, talking, laughing
+- Coughing, sneezing, typing
+- Object dropping, door closing
+- Traffic noise, car horns
+- TV/video audio
+- Clapping, cheering
+
+=== CRITICAL RULES (MUST FOLLOW) ===
+1. **MUSIC vs SIREN**: If the sound has melody, rhythm, harmony, lyrics, or beat → it is MUSIC → return SAFE. Sirens have NO melody - they are a single repeating tone.
+2. **When unsure**: Return SAFE. False alarms are worse than missed detections.
+3. **Default to SAFE**: Unless you are 90%+ confident it is a real emergency sound, return SAFE.
+4. Horn honking or car sounds → SAFE (traffic noise).
+5. Any sound with words/lyrics → SAFE (it is media or conversation).
 `;
 
         // Gemini REST API 호출
