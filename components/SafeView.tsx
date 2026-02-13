@@ -108,16 +108,16 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                             }}
                         ></div>
 
-                        {/* Main Shield Container - Glassmorphism Style */}
-                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-emerald-500/10 z-10 transition-transform duration-300">
+                        {/* Main Shield Container - Circle Glassmorphism Style */}
+                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/10 z-10 transition-transform duration-300">
                             {/* Inner detail for premium look */}
-                            <div className="absolute inset-2 rounded-[2rem] border border-white/30 bg-gradient-to-br from-emerald-50/50 to-emerald-100/10" />
+                            <div className="absolute inset-2 rounded-full border border-white/30 bg-gradient-to-br from-emerald-50/50 to-emerald-100/10" />
 
                             <ShieldCheck size={72} className="text-emerald-500 relative z-20 drop-shadow-sm" strokeWidth={1.5} />
 
                             {/* Status Indicator Dot */}
-                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-emerald-500 rounded-full animate-ping z-20 opacity-75"></div>
-                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-emerald-500 rounded-full z-20"></div>
+                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-emerald-500 rounded-full animate-ping z-20 opacity-75"></div>
+                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-emerald-500 rounded-full z-20"></div>
                         </div>
                     </div>
 

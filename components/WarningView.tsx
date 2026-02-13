@@ -46,14 +46,14 @@ export const WarningView: React.FC<WarningViewProps> = ({ setCurrentView, setSid
                         {/* Ambient Glow Background */}
                         <div className="absolute w-48 h-48 rounded-full bg-amber-400/40 filter blur-[60px] animate-pulse"></div>
 
-                        {/* Main Icon Container - Glassmorphism Style */}
-                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-amber-500/10 z-10">
-                            <div className="absolute inset-2 rounded-[2rem] border border-white/30 bg-gradient-to-br from-amber-50/50 to-amber-100/10" />
+                        {/* Main Icon Container - Circle Glassmorphism Style */}
+                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-full flex items-center justify-center shadow-2xl shadow-amber-500/10 z-10">
+                            <div className="absolute inset-2 rounded-full border border-white/30 bg-gradient-to-br from-amber-50/50 to-amber-100/10" />
                             <AlertCircle size={72} className="text-amber-500 relative z-20 drop-shadow-sm" strokeWidth={1.5} />
 
                             {/* Status Indicator Dot */}
-                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-amber-500 rounded-full animate-ping z-20 opacity-75"></div>
-                            <div className="absolute bottom-4 right-4 w-3 h-3 bg-amber-500 rounded-full z-20"></div>
+                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-amber-500 rounded-full animate-ping z-20 opacity-75"></div>
+                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-amber-500 rounded-full z-20"></div>
                         </div>
                     </div>
 

@@ -641,9 +641,12 @@ export default function Home() {
     }
 
     // 자동 복귀 로직 (Auto Reset)
-    // 주의(Warning) 상태이고, 7초(7000ms) 이상 소리가 조용하면(임계값 아래) 안전(Safe)으로 복귀
+    // 주의(Warning) 상태이고, 10초(10000ms) 이상 소리가 조용하면(임계값 아래) 안전(Safe)으로 복귀
+    // 단, AI 분석 중에는 복귀하지 않음!
     if (currentViewRef.current === 'warning') {
-      if (Date.now() - lastLoudTimeRef.current > 7000) {
+      if (Date.now() - lastLoudTimeRef.current > 10000
+        && !isAutoAnalyzingRef.current
+        && !isAnalyzingRef.current) {
         setCurrentView('safe');
         currentViewRef.current = 'safe';
       }
