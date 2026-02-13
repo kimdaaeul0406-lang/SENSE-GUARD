@@ -146,7 +146,16 @@ export default function Home() {
   useEffect(() => {
     try {
       const savedSensitivity = localStorage.getItem('sensitivity');
-      if (savedSensitivity) setSensitivity(Number(savedSensitivity));
+      if (savedSensitivity) {
+        const val = Number(savedSensitivity);
+        // 마이그레이션: 이전 기본값(50)이면 새 기본값(65)으로 업데이트
+        if (val === 50) {
+          setSensitivity(65);
+          localStorage.setItem('sensitivity', '65');
+        } else {
+          setSensitivity(val);
+        }
+      }
 
       const savedNotifications = localStorage.getItem('notifications');
       if (savedNotifications) setNotifications(JSON.parse(savedNotifications));
@@ -155,7 +164,16 @@ export default function Home() {
       if (savedNotificationTypes) setNotificationTypes(JSON.parse(savedNotificationTypes));
 
       const savedNotificationMethod = localStorage.getItem('notificationMethod');
-      if (savedNotificationMethod) setNotificationMethod(JSON.parse(savedNotificationMethod));
+      if (savedNotificationMethod) {
+        const parsed = JSON.parse(savedNotificationMethod);
+        // 마이그레이션: 이전에 vibration/sound가 false였으면 true로 업데이트
+        if (parsed.vibration === false || parsed.sound === false) {
+          parsed.vibration = true;
+          parsed.sound = true;
+          localStorage.setItem('notificationMethod', JSON.stringify(parsed));
+        }
+        setNotificationMethod(parsed);
+      }
     } catch (e) {
       console.error("Failed to load settings:", e);
     } finally {
@@ -373,6 +391,8 @@ export default function Home() {
   const stopListening = () => {
     // Wake Lock 해제
     releaseWakeLock();
+    // 위험 진동 중단
+    stopDangerVibration();
 
     if (micStreamRef.current) {
       micStreamRef.current.getTracks().forEach(track => track.stop());
@@ -477,6 +497,11 @@ export default function Home() {
 
       // Trigger Notification
       triggerNotification(newView);
+
+      // 위험 상태 진입 시 반복 진동 시작
+      if (newView === 'danger') {
+        startDangerVibration();
+      }
       return;
     }
 
@@ -486,8 +511,34 @@ export default function Home() {
     }
   };
 
+  // 위험 상태 반복 진동
+  const dangerVibrationRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startDangerVibration = () => {
+    // 기존 인터벌 정리
+    stopDangerVibration();
+    // 5초마다 진동 반복
+    dangerVibrationRef.current = setInterval(() => {
+      if (notificationMethod.vibration && navigator.vibrate) {
+        navigator.vibrate([500, 200, 500, 200, 500]);
+      }
+    }, 5000);
+  };
+
+  const stopDangerVibration = () => {
+    if (dangerVibrationRef.current) {
+      clearInterval(dangerVibrationRef.current);
+      dangerVibrationRef.current = null;
+    }
+    // 진동 즉시 중단
+    if (navigator.vibrate) {
+      navigator.vibrate(0);
+    }
+  };
+
   const handleConfirm = () => {
     // Reset to safe state and update reference so new alarms can trigger
+    stopDangerVibration(); // 진동 중단
     setCurrentView('safe');
     currentViewRef.current = 'safe';
     lastStateChangeTimeRef.current = Date.now();
@@ -580,15 +631,15 @@ export default function Home() {
         } catch (err) {
           console.error("AI Request Failed", err);
         } finally {
-          // Cooldown 5 seconds
+          // Cooldown 2 seconds (faster re-analysis for emergencies)
           setTimeout(() => {
             isAutoAnalyzingRef.current = false;
-          }, 5000);
+          }, 2000);
         }
       };
 
       mediaRecorder.start();
-      setTimeout(() => mediaRecorder.stop(), 5000); // Record for 5 seconds
+      setTimeout(() => mediaRecorder.stop(), 3000); // Record for 3 seconds (enough for siren detection)
     } catch (e) {
       console.error("Recorder Error", e);
       isAutoAnalyzingRef.current = false;
@@ -787,6 +838,7 @@ export default function Home() {
           onConfirm={handleConfirm}
           onAnalyze={analyzeAudio}
           aiAutoResult={aiAnalysisResult}
+          isAutoAnalyzing={isAutoAnalyzingRef.current}
         />
       )}
       {currentView === 'danger' && (

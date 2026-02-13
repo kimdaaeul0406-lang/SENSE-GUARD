@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, AlertTriangle, User, X, ChevronRight, FileText, Shield, MapPin, XCircle } from 'lucide-react';
+import { Menu, AlertTriangle, Settings, X, ChevronRight, FileText, Shield, MapPin, XCircle } from 'lucide-react';
 import { safetyManuals } from '../data/safetyManuals';
 
 interface DangerViewProps {
@@ -35,10 +35,19 @@ export const DangerView: React.FC<DangerViewProps> = ({ setCurrentView, setSideb
     return (
         <div className="h-screen overflow-hidden bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 flex flex-col relative" suppressHydrationWarning>
             <header className="bg-white/80 backdrop-blur-md border-b border-red-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20">
-                <h1 className="text-lg font-bold bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
+                <button
+                    onClick={() => {
+                        if (window.confirm('소리 감지를 중단하고 홈으로 돌아가시겠습니까?')) {
+                            stopListening();
+                        }
+                    }}
+                    className="hover:opacity-70 transition-opacity"
+                >
+                    <h1 className="text-lg font-bold bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
+                </button>
                 <div className="flex items-center gap-2">
                     <button onClick={() => setCurrentView('settings')} className="p-2 hover:bg-red-50 rounded-full transition-colors">
-                        <User size={24} className="text-red-700" />
+                        <Settings size={24} className="text-red-700" />
                     </button>
                     <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-red-100 rounded-lg transition-colors">
                         <Menu size={22} className="text-red-700" />

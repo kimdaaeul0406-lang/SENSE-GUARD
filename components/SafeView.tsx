@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, ShieldCheck, User, Moon, Sun } from 'lucide-react';
+import { ShieldCheck, Menu, Settings, Moon, Sun } from 'lucide-react';
 
 interface SafeViewProps {
     setCurrentView: (view: string) => void;
@@ -50,7 +50,7 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
 
             if (glowRef.current) {
                 glowRef.current.style.transform = `scale(${scale})`;
-                glowRef.current.style.opacity = `${opacity}`;
+                glowRef.current.style.opacity = `${opacity} `;
             }
 
             animationId = requestAnimationFrame(renderFrame);
@@ -84,11 +84,20 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex flex-col">
-            <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm sticky top-0 z-20">
-                <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
+            <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20">
+                <button
+                    onClick={() => {
+                        if (window.confirm('소리 감지를 중단하고 홈으로 돌아가시겠습니까?')) {
+                            stopListening();
+                        }
+                    }}
+                    className="hover:opacity-70 transition-opacity"
+                >
+                    <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
+                </button>
                 <div className="flex items-center gap-2">
                     <button onClick={() => setCurrentView('settings')} className="p-2 hover:bg-emerald-50 rounded-full transition-colors">
-                        <User size={24} className="text-emerald-700" />
+                        <Settings size={24} className="text-emerald-700" />
                     </button>
                     <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-emerald-100 rounded-lg transition-colors">
                         <Menu size={22} className="text-emerald-700" />
@@ -102,7 +111,7 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                         {/* Ambient Glow Background */}
                         <div
                             ref={glowRef}
-                            className={`absolute w-48 h-48 rounded-full bg-emerald-400/40 filter blur-[60px] transition-all duration-100 ${!stream ? 'animate-pulse' : ''}`}
+                            className={`absolute w - 48 h - 48 rounded - full bg - emerald - 400 / 40 filter blur - [60px] transition - all duration - 100 ${!stream ? 'animate-pulse' : ''} `}
                             style={{
                                 transform: !stream ? 'scale(1)' : undefined
                             }}

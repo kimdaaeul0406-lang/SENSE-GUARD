@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, AlertCircle, User } from 'lucide-react';
+import { Menu, AlertCircle, Settings } from 'lucide-react';
 
 interface WarningViewProps {
     setCurrentView: (view: string) => void;
@@ -8,9 +8,10 @@ interface WarningViewProps {
     onConfirm: () => void;
     onAnalyze: () => Promise<string>;
     aiAutoResult?: { riskLevel: string; description: string; action: string } | null;
+    isAutoAnalyzing?: boolean;
 }
 
-export const WarningView: React.FC<WarningViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, onConfirm, onAnalyze, aiAutoResult }) => {
+export const WarningView: React.FC<WarningViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, onConfirm, onAnalyze, aiAutoResult, isAutoAnalyzing }) => {
     const [isAnalyzing, setIsAnalyzing] = React.useState(false);
     const [analysisResult, setAnalysisResult] = React.useState<string | null>(null);
 
@@ -29,10 +30,19 @@ export const WarningView: React.FC<WarningViewProps> = ({ setCurrentView, setSid
     return (
         <div className="h-screen overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 flex flex-col relative" suppressHydrationWarning>
             <header className="bg-white/80 backdrop-blur-md border-b border-amber-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20">
-                <h1 className="text-lg font-bold bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
+                <button
+                    onClick={() => {
+                        if (window.confirm('소리 감지를 중단하고 홈으로 돌아가시겠습니까?')) {
+                            stopListening();
+                        }
+                    }}
+                    className="hover:opacity-70 transition-opacity"
+                >
+                    <h1 className="text-lg font-bold bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
+                </button>
                 <div className="flex items-center gap-2">
                     <button onClick={() => setCurrentView('settings')} className="p-2 hover:bg-amber-50 rounded-full transition-colors">
-                        <User size={24} className="text-amber-700" />
+                        <Settings size={24} className="text-amber-700" />
                     </button>
                     <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-amber-100 rounded-lg transition-colors">
                         <Menu size={22} className="text-amber-700" />
@@ -58,9 +68,17 @@ export const WarningView: React.FC<WarningViewProps> = ({ setCurrentView, setSid
                     </div>
 
                     <h2 className="text-2xl font-bold text-amber-600 mb-1">주의</h2>
-                    <p className="text-sm text-amber-700 text-center mb-4">
+                    <p className="text-sm text-amber-700 text-center mb-2">
                         {aiAutoResult ? aiAutoResult.description : "주변 소리와 환경을 주의깊게 확인하세요"}
                     </p>
+
+                    {/* AI 자동 분석 중 표시 */}
+                    {isAutoAnalyzing && !aiAutoResult && (
+                        <div className="w-full bg-amber-100/80 backdrop-blur-sm rounded-xl px-4 py-3 mb-4 flex items-center gap-3 animate-pulse">
+                            <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-medium text-amber-800">AI가 소리를 분석하고 있습니다...</p>
+                        </div>
+                    )}
 
                     {/* AI 자동 분석 결과 카드 */}
                     {aiAutoResult && (
