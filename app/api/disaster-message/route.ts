@@ -34,37 +34,54 @@ interface FormattedMessage {
 }
 
 // Mock Data for Fallback
+// Helper to generate dynamic dates
+const getRelativeDateString = (hoursAgo: number, minutesAgo: number): string => {
+    const date = new Date();
+    date.setHours(date.getHours() - hoursAgo);
+    date.setMinutes(date.getMinutes() - minutesAgo);
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    const second = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}/${month}/${day} ${hour}:${minute}:${second}`;
+};
+
+// Mock Data for Fallback (Dynamic Dates)
 const MOCK_MESSAGES: FormattedMessage[] = [
     {
-        sentAt: '2024/02/11 13:55:00',
+        sentAt: getRelativeDateString(0, 5), // 5 mins ago
         region: '서울특별시 전체',
         type: '안전안내',
         level: '안전안내',
         text: '[행정안전부] 오늘 14:00부로 서울 전역에 호우주의보가 발령되었습니다. 하천 주변 산책을 자제하시고 안전에 유의하시기 바랍니다.'
     },
     {
-        sentAt: '2024/02/11 11:30:00',
+        sentAt: getRelativeDateString(2, 30), // 2.5 hours ago
         region: '경기도 성남시',
         type: '안전안내',
         level: '안전안내',
         text: '[성남시청] 현재 관내 강설로 인한 도로 결빙 구간이 많습니다. 대중교통 이용 및 안전운전 바랍니다.'
     },
     {
-        sentAt: '2024/02/10 18:00:00',
+        sentAt: getRelativeDateString(5, 0), // 5 hours ago
         region: '전국',
         type: '안전안내',
         level: '안전안내',
         text: '[질병관리청] 독감 유행 주의보 발령. 손씻기 생활화 및 마스크 착용 등 개인 위생 수칙을 준수해 주세요.'
     },
     {
-        sentAt: '2024/02/10 09:20:00',
+        sentAt: getRelativeDateString(24, 0), // 1 day ago
         region: '강원도 강릉시',
         type: '산불조심',
         level: '주의',
         text: '[산림청] 건조한 날씨로 산불 위험이 높습니다. 입산 시 인화물질 소지를 금지하고 소각 행위를 자제해 주세요.'
     },
     {
-        sentAt: '2024/02/09 15:10:00',
+        sentAt: getRelativeDateString(26, 0), // 1 day 2 hours ago
         region: '부산광역시 해운대구',
         type: '시설물안전',
         level: '안전안내',

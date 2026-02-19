@@ -1,5 +1,5 @@
-import React from 'react';
-import { ShieldCheck, Menu, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { ShieldCheck, Menu, Settings, Moon } from 'lucide-react';
 
 interface SafeViewProps {
     setCurrentView: (view: string) => void;
@@ -63,8 +63,28 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
         };
     }, [stream]);
 
+    const [isSleepMode, setIsSleepMode] = useState(false);
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex flex-col">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex flex-col relative">
+            {/* Sleep Mode Overlay */}
+            {isSleepMode && (
+                <div
+                    className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center cursor-pointer"
+                    onClick={() => setIsSleepMode(false)}
+                >
+                    <div className="flex flex-col items-center opacity-30 animate-pulse">
+                        <ShieldCheck size={64} className="text-emerald-500 mb-4" />
+                        <p className="text-emerald-500 font-medium text-lg">SENSE-GUARD 작동 중</p>
+                        <p className="text-gray-500 text-sm mt-2">화면을 터치하면 다시 켜집니다</p>
+                    </div>
+                    {/* Floating Battery Saver Icon to indicate mode */}
+                    <div className="absolute bottom-10 text-gray-800 text-xs">
+                        절전 모드 실행 중
+                    </div>
+                </div>
+            )}
+
             <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20">
                 <button
                     onClick={() => {
@@ -77,6 +97,13 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                     <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
                 </button>
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setIsSleepMode(true)}
+                        className="p-2 hover:bg-emerald-50 rounded-full transition-colors"
+                        aria-label="절전 모드"
+                    >
+                        <Moon size={24} className="text-emerald-700" />
+                    </button>
                     <button onClick={() => setCurrentView('settings')} className="p-2 hover:bg-emerald-50 rounded-full transition-colors">
                         <Settings size={24} className="text-emerald-700" />
                     </button>
@@ -123,6 +150,14 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                             className="w-full bg-white text-emerald-600 border-2 border-emerald-500 py-3 rounded-xl text-sm font-semibold shadow-lg hover:bg-emerald-50 transition-all"
                         >
                             소리 감지 중지
+                        </button>
+
+                        <button
+                            onClick={() => setIsSleepMode(true)}
+                            className="w-full bg-emerald-600 text-white border-2 border-transparent py-3 rounded-xl text-sm font-semibold shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Moon size={18} />
+                            수면/절전 모드 (화면 끄기)
                         </button>
 
                         <button

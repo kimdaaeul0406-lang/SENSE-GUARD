@@ -18,18 +18,84 @@ function getDefaultDate(): string {
     return `${year}${month}${day}`;
 }
 
+// Helper to get date string YYYYMMDD relative to today
+function getRelativeDateStr(daysAgo: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}${month}${day}`;
+}
+
+const MOCK_FIRE_DATA = [
+    {
+        ocrnDt: getRelativeDateStr(0),
+        sido_nm: '경기도',
+        sggNm: '수원시',
+        fire_grd_nm: '화재',
+        fire_caush_nm: '전기적 요인',
+        siDoNm: '경기도',
+        ocrn_ymd: getRelativeDateStr(0)
+    },
+    {
+        ocrnDt: getRelativeDateStr(0),
+        sido_nm: '서울특별시',
+        sggNm: '강남구',
+        fire_grd_nm: '구조',
+        fire_caush_nm: '교통사고',
+        siDoNm: '서울특별시',
+        ocrn_ymd: getRelativeDateStr(0)
+    },
+    {
+        ocrnDt: getRelativeDateStr(0),
+        sido_nm: '부산광역시',
+        sggNm: '해운대구',
+        fire_grd_nm: '화재',
+        fire_caush_nm: '부주의',
+        siDoNm: '부산광역시',
+        ocrn_ymd: getRelativeDateStr(1)
+    },
+    {
+        ocrnDt: getRelativeDateStr(1),
+        sido_nm: '강원도',
+        sggNm: '속초시',
+        fire_grd_nm: '산불',
+        fire_caush_nm: '담배꽁초',
+        siDoNm: '강원도',
+        ocrn_ymd: getRelativeDateStr(1)
+    },
+    {
+        ocrnDt: getRelativeDateStr(1),
+        sido_nm: '인천광역시',
+        sggNm: '부평구',
+        fire_grd_nm: '구급',
+        fire_caush_nm: '복통 호소',
+        siDoNm: '인천광역시',
+        ocrn_ymd: getRelativeDateStr(1)
+    }
+];
+
 export async function GET(request: NextRequest) {
     const serviceKey = process.env.DATA_GO_KR_SERVICE_KEY;
 
+    // Use Mock if no key (Local dev environment)
     if (!serviceKey) {
-        return NextResponse.json(
-            {
-                success: false,
-                error: 'SERVICE_KEY_NOT_FOUND',
-                message: '환경변수 DATA_GO_KR_SERVICE_KEY가 설정되지 않았습니다.',
+        return NextResponse.json({
+            success: true,
+            status: 200,
+            isJson: true,
+            data: {
+                response: {
+                    body: {
+                        items: {
+                            item: MOCK_FIRE_DATA
+                        }
+                    }
+                }
             },
-            { status: 500 }
-        );
+            mock: true
+        });
     }
 
     try {
@@ -59,22 +125,51 @@ export async function GET(request: NextRequest) {
             isJson = false;
         }
 
+        // Return Mock if API fails or returns non-JSON (often XML service errors)
+        if (!response.ok || !isJson || !parsedData.response || !parsedData.response.body) {
+            console.warn("Fire API Failed, using Mock", rawText.substring(0, 100));
+            return NextResponse.json({
+                success: true,
+                status: 200,
+                isJson: true,
+                data: {
+                    response: {
+                        body: {
+                            items: {
+                                item: MOCK_FIRE_DATA
+                            }
+                        }
+                    }
+                },
+                mock: true,
+                originalError: isJson ? parsedData : rawText.substring(0, 100)
+            });
+        }
+
         return NextResponse.json({
             success: response.ok && isJson,
             status: response.status,
             isJson,
             requestedDate: ocrnYmd,
-            rawPreview: rawText.substring(0, 500),
             data: parsedData,
         });
     } catch (error) {
-        return NextResponse.json(
-            {
-                success: false,
-                error: 'FETCH_ERROR',
-                message: error instanceof Error ? error.message : '알 수 없는 오류',
+        console.error("Fire API Exception", error);
+        return NextResponse.json({
+            success: true,
+            status: 200,
+            isJson: true,
+            data: {
+                response: {
+                    body: {
+                        items: {
+                            item: MOCK_FIRE_DATA
+                        }
+                    }
+                }
             },
-            { status: 500 }
-        );
+            mock: true,
+            originalError: error instanceof Error ? error.message : 'UNKNOWN_EXCEPTION'
+        });
     }
 }

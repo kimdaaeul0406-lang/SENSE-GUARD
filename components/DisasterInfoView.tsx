@@ -111,15 +111,44 @@ export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentVi
     };
 
     // 날짜 포맷 헬퍼 함수 (202602091000 → 2026.02.09 10:00)
+    // 날짜 포맷 헬퍼 함수
+    // 날짜 포맷 헬퍼 함수 통합 (YYYY.MM.DD HH:mm)
     const formatDateTime = (dateInput: string | number): string => {
-        const dateStr = String(dateInput || '');
-        if (!dateStr || dateStr.length < 12) return dateStr;
-        const year = dateStr.substring(0, 4);
-        const month = dateStr.substring(4, 6);
-        const day = dateStr.substring(6, 8);
-        const hour = dateStr.substring(8, 10);
-        const minute = dateStr.substring(10, 12);
-        return `${year}.${month}.${day} ${hour}:${minute}`;
+        let dateStr = String(dateInput || '').trim();
+        if (!dateStr) return '';
+
+        // 1. 단순 숫자만 있는 경우 (YYYYMMDD, YYYYMMDDHHmm 등)
+        const plainNumber = dateStr.replace(/[^0-9]/g, '');
+
+        // 원본이 구분자가 섞여있었지만, 정리해서 처리
+        if (dateStr.includes('/') || dateStr.includes('-') || dateStr.includes('.')) {
+            // 구분자 통일
+            dateStr = dateStr.replace(/\//g, '.').replace(/-/g, '.');
+
+            // 초 단위(:ss) 제거 로직
+            const parts = dateStr.split(' ');
+            if (parts.length > 1) {
+                const timePart = parts[1];
+                const timeSubParts = timePart.split(':');
+                // HH:mm:ss 형태라면 HH:mm으로 자름
+                if (timeSubParts.length >= 3) {
+                    return `${parts[0]} ${timeSubParts[0]}:${timeSubParts[1]}`;
+                }
+            }
+            return dateStr;
+        }
+
+        // 2. 숫자로만 된 문자열 포맷팅
+        if (plainNumber.length === 8) {
+            // YYYYMMDD -> YYYY.MM.DD
+            return `${plainNumber.substring(0, 4)}.${plainNumber.substring(4, 6)}.${plainNumber.substring(6, 8)}`;
+        }
+        if (plainNumber.length >= 12) {
+            // YYYYMMDDHHmm -> YYYY.MM.DD HH:mm
+            return `${plainNumber.substring(0, 4)}.${plainNumber.substring(4, 6)}.${plainNumber.substring(6, 8)} ${plainNumber.substring(8, 10)}:${plainNumber.substring(10, 12)}`;
+        }
+
+        return dateStr;
     };
 
     // 기상특보 API 호출
@@ -164,7 +193,7 @@ export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentVi
             if (data.success && data.data?.response?.body?.items?.item) {
                 const items = data.data.response.body.items.item;
                 const formatted: FireInfo[] = (Array.isArray(items) ? items : [items]).map((item: FireApiItem) => ({
-                    date: item.ocrnDt || item.ocrn_ymd || '',
+                    date: formatDateTime(item.ocrnDt || item.ocrn_ymd || ''),
                     location: item.siDoNm && item.sggNm ? `${item.siDoNm} ${item.sggNm}` : (item.sido_nm || ''),
                     type: item.fireGrdNm || item.fire_grd_nm || '화재',
                     cause: item.fireCaushNm || item.fire_caush_nm || '조사중',
@@ -286,7 +315,7 @@ export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentVi
                                                 <span className="text-xs text-gray-500">{msg.region}</span>
                                             </div>
                                             <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>
-                                            <p className="text-xs text-gray-400 mt-2">{msg.sentAt}</p>
+                                            <p className="text-xs text-gray-400 mt-2">{formatDateTime(msg.sentAt)}</p>
                                         </div>
                                     ))
                                 )}
