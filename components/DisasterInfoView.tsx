@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, AlertTriangle, Cloud, Flame, RefreshCw } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Cloud, Flame, RefreshCw, MapPin } from 'lucide-react';
 
 interface WeatherApiItem {
     tmFc?: string | number;
@@ -86,6 +86,50 @@ export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentVi
     // 화재정보 데이터
     const [fireInfos, setFireInfos] = useState<FireInfo[]>([]);
     const [fireError, setFireError] = useState<string | null>(null);
+
+    // 위치 기반 지역 탐지
+    const detectLocation = () => {
+        if (!navigator.geolocation) {
+            alert("이 브라우저에서는 위치 정보를 지원하지 않습니다.");
+            return;
+        }
+
+        setLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                try {
+                    // OpenStreetMap Nominatim API 활용 (무료 역지오코딩)
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`, {
+                        headers: { 'Accept-Language': 'ko' }
+                    });
+                    const data = await res.json();
+
+                    const city = data.address?.city || data.address?.province || data.address?.state || '';
+                    console.log("Detected Location:", city);
+
+                    // 매핑 시도
+                    const found = regions.find(r => r.value !== '' && (city.includes(r.value) || r.label.includes(city)));
+                    if (found) {
+                        setSelectedRegion(found.value);
+                        alert(`내 위치("${found.label}")를 감지했습니다.`);
+                    } else {
+                        alert("현재 위치를 지원되는 지역으로 매핑할 수 없습니다.");
+                    }
+                } catch (err) {
+                    console.error("Location detection failed", err);
+                    alert("위치 정보를 가져오는데 실패했습니다.");
+                } finally {
+                    setLoading(false);
+                }
+            },
+            (err) => {
+                console.error(err);
+                alert("위치 권한을 허용해주세요.");
+                setLoading(false);
+            }
+        );
+    };
 
     // 재난문자 API 호출
     const fetchDisasterMessages = async (region: string = '', force: boolean = false) => {
@@ -271,11 +315,11 @@ export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentVi
 
             {/* 지역 필터 (재난문자 탭에서만 표시) */}
             {activeTab === 'disaster' && (
-                <div className="bg-white border-b border-gray-200 px-4 py-3">
+                <div className="bg-white border-b border-gray-200 px-4 py-3 flex gap-2">
                     <select
                         value={selectedRegion}
                         onChange={(e) => setSelectedRegion(e.target.value)}
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     >
                         {regions.map((region) => (
                             <option key={region.value} value={region.value}>
@@ -283,6 +327,13 @@ export const DisasterInfoView: React.FC<DisasterInfoViewProps> = ({ setCurrentVi
                             </option>
                         ))}
                     </select>
+                    <button
+                        onClick={detectLocation}
+                        className="px-4 bg-blue-50 text-blue-600 border border-blue-200 rounded-xl flex items-center justify-center hover:bg-blue-100 transition-colors"
+                        title="내 위치 감지"
+                    >
+                        <MapPin size={20} />
+                    </button>
                 </div>
             )}
 

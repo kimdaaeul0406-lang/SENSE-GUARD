@@ -11,8 +11,8 @@ interface NotificationTypes {
 
 interface NotificationMethod {
     screen: boolean;
-    vibration: boolean;
     sound: boolean;
+    vibration: boolean;
 }
 
 interface SettingsViewProps {
@@ -137,21 +137,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setNotificationMethod({ ...notificationMethod, screen: !notificationMethod.screen })}
-                                className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${notificationMethod.screen ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.screen ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                             >
                                 화면표시
                             </button>
                             <button
-                                onClick={() => setNotificationMethod({ ...notificationMethod, vibration: !notificationMethod.vibration })}
-                                className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${notificationMethod.vibration ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                            >
-                                진동
-                            </button>
-                            <button
                                 onClick={() => setNotificationMethod({ ...notificationMethod, sound: !notificationMethod.sound })}
-                                className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${notificationMethod.sound ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.sound ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                             >
                                 소리
+                            </button>
+                            <button
+                                onClick={() => setNotificationMethod({ ...notificationMethod, vibration: !notificationMethod.vibration })}
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.vibration ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                            >
+                                진동
                             </button>
                         </div>
                     </div>
@@ -240,7 +240,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </button>
                     <button
                         onClick={() => setCurrentView('ai-chat')}
-                        className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white py-4 rounded-xl text-sm font-semibold shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                        className="w-full bg-[#f8fafc] border border-slate-200 text-slate-600 py-4 rounded-2xl text-sm font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 hover:bg-slate-100 shadow-sm"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 8V4H8" />

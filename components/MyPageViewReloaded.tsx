@@ -50,7 +50,18 @@ export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurre
     };
 
     const saveEdit = async (id: string) => {
-        if (!editName || !editPhone) return;
+        if (!editName.trim()) {
+            alert('이름을 입력해 주세요.');
+            return;
+        }
+
+        // 간단한 전화번호 검증 (숫자, -, + 포함 가능)
+        const phoneRegex = /^[0-9+\-\s]{8,15}$/;
+        if (!phoneRegex.test(editPhone)) {
+            alert('유효한 전화번호 형식이 아닙니다. (예: 010-1234-5678)');
+            return;
+        }
+
         const success = await updateEmergencyContact(id, editName, editPhone);
         if (success) {
             setContacts(contacts.map(c => c.id === id ? { ...c, name: editName, phone: editPhone } : c));
@@ -61,7 +72,18 @@ export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurre
     };
 
     const handleAddContact = async () => {
-        if (newContactName && newContactPhone && user) {
+        if (!newContactName.trim()) {
+            alert('이름을 입력해 주세요.');
+            return;
+        }
+
+        const phoneRegex = /^[0-9+\-\s]{8,15}$/;
+        if (!phoneRegex.test(newContactPhone)) {
+            alert('유효한 전화번호 형식이 아닙니다.');
+            return;
+        }
+
+        if (user) {
             const newContact = await addEmergencyContact(user.id, newContactName, newContactPhone);
             if (newContact) {
                 setContacts([...contacts, { id: newContact.id, name: newContact.name, phone: newContact.phone }]);

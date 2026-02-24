@@ -67,19 +67,19 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">시스템 상태</p>
                         <div className="flex items-center justify-around">
                             <div className="flex flex-col items-center gap-1">
-                                <Mic size={20} className={getStatusColor(micStatus)} />
+                                <Mic size={28} className={getStatusColor(micStatus)} />
                                 <span className="text-[10px] text-gray-500">마이크</span>
                                 <span className={`text-[10px] font-semibold ${getStatusColor(micStatus)}`}>{getStatusText(micStatus)}</span>
                             </div>
                             <div className="w-px h-8 bg-gray-200" />
                             <div className="flex flex-col items-center gap-1">
-                                <Bell size={20} className={getStatusColor(notifStatus)} />
+                                <Bell size={28} className={getStatusColor(notifStatus)} />
                                 <span className="text-[10px] text-gray-500">알림</span>
                                 <span className={`text-[10px] font-semibold ${getStatusColor(notifStatus)}`}>{getStatusText(notifStatus)}</span>
                             </div>
                             <div className="w-px h-8 bg-gray-200" />
                             <div className="flex flex-col items-center gap-1">
-                                <Wifi size={20} className="text-emerald-500" />
+                                <Wifi size={28} className="text-emerald-500" />
                                 <span className="text-[10px] text-gray-500">네트워크</span>
                                 <span className="text-[10px] font-semibold text-emerald-500">연결됨</span>
                             </div>
@@ -92,15 +92,28 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
                         </div>
                     </div>
 
+                    {micStatus === 'denied' && (
+                        <div className="w-full bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
+                            <p className="text-xs font-bold text-red-600 mb-1">⚠️ 마이크 권한이 차단되었습니다</p>
+                            <p className="text-[11px] text-red-700 leading-relaxed">
+                                소리 감지 기능을 사용하려면 브라우저 주소창 왼쪽의 자물쇠 아이콘을 클릭하여 마이크 권한을 <strong>'허용'</strong>으로 변경해 주세요.
+                            </p>
+                        </div>
+                    )}
+
                     <button
                         onClick={startListening}
-                        className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white py-4 rounded-xl mb-3 text-sm font-semibold shadow-lg transition-all transform hover:scale-105 active:scale-95"
+                        className={`w-full py-4 rounded-xl mb-3 text-sm font-semibold shadow-lg transition-all transform hover:scale-105 active:scale-95 ${micStatus === 'denied'
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
+                            } text-white`}
+                        disabled={micStatus === 'denied'}
                     >
-                        소리 감지 시작
+                        {micStatus === 'denied' ? '마이크 권한 필요' : '소리 감지 시작'}
                     </button>
                     <button
                         onClick={() => setCurrentView('ai-chat')}
-                        className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white py-4 rounded-xl mb-4 text-sm font-semibold shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                        className="w-full bg-[#f8fafc] border border-slate-200 text-slate-600 py-4 rounded-2xl mb-4 text-sm font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 hover:bg-slate-100 shadow-sm"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 8V4H8" />

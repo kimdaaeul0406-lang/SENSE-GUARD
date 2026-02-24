@@ -1,202 +1,115 @@
-import React from 'react';
-import { Menu, AlertCircle, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertTriangle, Shield, Search, ArrowRight, MessageCircle } from 'lucide-react';
+import { AuroraBackground } from './AuroraBackground';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface WarningViewProps {
-    setCurrentView: (view: string) => void;
-    setSidebarOpen: (open: boolean) => void;
-    stopListening: () => void;
-    onConfirm: () => void;
-    onAnalyze: () => Promise<string>;
-    aiAutoResult?: { riskLevel: string; description: string; action: string } | null;
-    isAutoAnalyzing?: boolean;
-}
+export const WarningView: React.FC<any> = ({
+    setCurrentView,
+    setSidebarOpen,
+    startListening,
+    aiAutoResult,
+    isAutoAnalyzing
+}) => {
+    // 실제 AI 분석 결과가 있으면 그것을 우선 사용
+    const displayAnalysis = aiAutoResult?.description || "주변에서 큰 소리가 감지되었습니다. 주의가 필요합니다.";
+    const displaySoundType = aiAutoResult?.riskLevel === 'WARNING' ? (aiAutoResult.description.split(' ')[0] || "감지된 소음") : "미확인 소음";
+    const [isLocalAnalyzing, setIsLocalAnalyzing] = useState(true);
 
-export const WarningView: React.FC<WarningViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, onConfirm, onAnalyze, aiAutoResult, isAutoAnalyzing }) => {
-    const [isAnalyzing, setIsAnalyzing] = React.useState(false);
-    const [analysisResult, setAnalysisResult] = React.useState<string | null>(null);
-
-    const handleAnalyzeClick = async () => {
-        setIsAnalyzing(true);
-        try {
-            const result = await onAnalyze();
-            setAnalysisResult(result || "소리 분석 결과를 받을 수 없습니다.");
-        } catch {
-            setAnalysisResult("오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-        } finally {
-            setIsAnalyzing(false);
+    useEffect(() => {
+        // AI 분석 중이면 로컬 타이머와 상관없이 분석 중 표시
+        if (!isAutoAnalyzing) {
+            const timer = setTimeout(() => setIsLocalAnalyzing(false), 2000);
+            return () => clearTimeout(timer);
         }
-    };
+    }, [isAutoAnalyzing]);
+
+    const isCurrentlyAnalyzing = isAutoAnalyzing || isLocalAnalyzing;
 
     return (
-        <div className="h-screen overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 flex flex-col relative" suppressHydrationWarning>
-            <header className="bg-white/80 backdrop-blur-md border-b border-amber-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20">
-                <button
-                    onClick={() => {
-                        if (window.confirm('소리 감지를 중단하고 홈으로 돌아가시겠습니까?')) {
-                            stopListening();
-                        }
-                    }}
-                    className="hover:opacity-70 transition-opacity"
-                >
-                    <h1 className="text-lg font-bold bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
-                </button>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setCurrentView('settings')} className="p-2 hover:bg-amber-50 rounded-full transition-colors">
-                        <Settings size={24} className="text-amber-700" />
-                    </button>
-                    <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-amber-100 rounded-lg transition-colors">
-                        <Menu size={22} className="text-amber-700" />
+        <div className="min-h-screen bg-[#fffbeb] flex flex-col relative overflow-hidden transition-colors duration-500">
+            <div className="absolute inset-0 opacity-10 pointer-events-none">
+                <AuroraBackground isActive={isCurrentlyAnalyzing} color="amber" />
+            </div>
+
+            <header className="bg-white/50 backdrop-blur-md border-b border-amber-100 px-4 py-4 pt-safe flex items-center justify-between shadow-sm z-20">
+                <h1 className="text-lg font-bold text-amber-600/60 font-medium">SENSE-GUARD [주의]</h1>
+                <div className="flex gap-2">
+                    <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-amber-50 rounded-lg transition-colors text-amber-400">
+                        <Shield size={20} />
                     </button>
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full">
-                <div className="w-full max-w-md mx-auto flex flex-col items-center">
-                    <div className="relative w-64 h-64 mb-4 flex items-center justify-center">
-                        {/* Ambient Glow Background */}
-                        <div className="absolute w-48 h-48 rounded-full bg-amber-400/40 filter blur-[60px] animate-pulse"></div>
+            <main className="flex-1 flex flex-col items-center px-6 py-8 overflow-y-auto z-10 w-full">
+                <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-full max-w-md flex flex-col items-center"
+                >
+                    <div className="relative mb-8">
+                        <motion.div
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 3, repeat: Infinity }}
+                            className="w-28 h-28 bg-amber-400/70 rounded-full flex items-center justify-center shadow-lg shadow-amber-200"
+                        >
+                            <AlertTriangle size={48} className="text-white" />
+                        </motion.div>
+                    </div>
 
-                        {/* Main Icon Container - Circle Glassmorphism Style */}
-                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-full flex items-center justify-center shadow-2xl shadow-amber-500/10 z-10">
-                            <div className="absolute inset-2 rounded-full border border-white/30 bg-gradient-to-br from-amber-50/50 to-amber-100/10" />
-                            <AlertCircle size={72} className="text-amber-500 relative z-20 drop-shadow-sm" strokeWidth={1.5} />
+                    <div className="w-full bg-white/70 backdrop-blur-sm rounded-3xl p-6 shadow-md border border-amber-50 mb-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Search size={16} className="text-amber-400" />
+                            <h3 className="font-bold text-amber-800/70 text-sm">AI 분석 결과</h3>
+                        </div>
 
-                            {/* Status Indicator Dot */}
-                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-amber-500 rounded-full animate-ping z-20 opacity-75"></div>
-                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-amber-500 rounded-full z-20"></div>
+                        <div className="space-y-3">
+                            <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100/30 text-center">
+                                <p className="text-[10px] text-amber-600/50 mb-1 font-bold uppercase tracking-wider">감지된 소리</p>
+                                <p className="text-xl font-bold text-amber-900/60">{displaySoundType}</p>
+                            </div>
+
+                            <div className="p-4 bg-white/50 rounded-2xl border border-amber-50/50">
+                                <p className="text-[10px] text-amber-500/60 font-bold mb-1">상태 보고</p>
+                                <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                                    {isCurrentlyAnalyzing ? "정밀 분석 중..." : displayAnalysis}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-amber-600 mb-1">주의</h2>
-                    <p className="text-sm text-amber-700 text-center mb-2">
-                        {aiAutoResult ? aiAutoResult.description : "주변 소리와 환경을 주의깊게 확인하세요"}
-                    </p>
-
-                    {/* AI 자동 분석 중 표시 */}
-                    {isAutoAnalyzing && !aiAutoResult && (
-                        <div className="w-full bg-amber-100/80 backdrop-blur-sm rounded-xl px-4 py-3 mb-4 flex items-center gap-3 animate-pulse">
-                            <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-sm font-medium text-amber-800">AI가 소리를 분석하고 있습니다...</p>
-                        </div>
-                    )}
-
-                    {/* AI 자동 분석 결과 카드 */}
-                    {aiAutoResult && (
-                        <div className="w-full bg-white rounded-xl shadow-lg border border-amber-200 p-4 mb-4">
-                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-amber-100">
-                                <span className={`px-2 py-0.5 rounded-full text-white text-xs font-bold ${aiAutoResult.riskLevel === 'SAFE' ? 'bg-green-500' :
-                                    aiAutoResult.riskLevel === 'DANGER' ? 'bg-red-500' : 'bg-amber-500'
-                                    }`}>
-                                    {aiAutoResult.riskLevel === 'SAFE' ? '안전' : aiAutoResult.riskLevel === 'DANGER' ? '위험' : '주의'}
-                                </span>
-                                <h3 className="text-sm font-bold text-gray-800">AI 자동 분석 결과</h3>
-                            </div>
-                            <div className="space-y-3">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-500 mb-1">감지된 소리</p>
-                                    <p className="text-sm text-gray-800">{aiAutoResult.description}</p>
-                                </div>
-                                <div className="bg-amber-50 p-3 rounded-lg">
-                                    <p className="text-xs font-bold text-amber-700 mb-1">💡 행동 요령</p>
-                                    <p className="text-sm text-amber-900 leading-snug">{aiAutoResult.action}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="w-full flex flex-col gap-2 mb-4">
+                    <div className="w-full space-y-3 max-w-[320px]">
                         <button
-                            onClick={handleAnalyzeClick}
-                            disabled={isAnalyzing}
-                            className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white py-3 rounded-xl text-sm font-semibold shadow-lg hover:from-amber-600 hover:to-yellow-600 transition-all disabled:opacity-50"
+                            onClick={startListening}
+                            className="w-full bg-amber-400/80 text-white py-4 rounded-2xl text-base font-bold shadow-md hover:bg-amber-500/80 transition-all flex items-center justify-center gap-2"
                         >
-                            {isAnalyzing ? "소리 듣는 중..." : "AI에게 물어보기"}
+                            확인했습니다
                         </button>
 
+                        {/* 사용자님이 요청하신 2번째 사진의 깔끔한 스타일 적용 */}
                         <button
-                            onClick={onConfirm}
-                            className="w-full bg-white text-amber-600 border-2 border-amber-500 py-3 rounded-xl text-sm font-semibold shadow-lg hover:bg-amber-50 transition-all"
+                            onClick={() => setCurrentView('ai-chat')}
+                            className="w-full bg-[#f8fafc] border border-slate-200 text-slate-600 py-4 rounded-2xl text-sm font-semibold shadow-sm hover:bg-slate-100 transition-all flex items-center justify-center gap-2 active:scale-95"
                         >
-                            상황 확인 완료 (다시 감지)
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 8V4H8" />
+                                <rect width="16" height="12" x="4" y="8" rx="2" />
+                                <path d="M2 14h2" />
+                                <path d="M20 14h2" />
+                                <path d="M15 13v2" />
+                                <path d="M9 13v2" />
+                            </svg>
+                            AI 안전 도우미
                         </button>
                     </div>
-
-                    {/* 자동 분석 결과 표시 영역 제거됨 */}
-                    {isAnalyzing && (
-                        <div className="text-xs text-amber-700 text-center w-full leading-relaxed mb-4 bg-white/60 backdrop-blur-sm p-3 rounded-xl animate-pulse">
-                            AI가 소리를 듣고 분석 중입니다... (5초)
-                        </div>
-                    )}
-
-                    {/* AI Analysis Result Inline */}
-                    {analysisResult && !isAnalyzing && (() => {
-                        let parsed = null;
-                        try {
-                            const cleanText = analysisResult.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-                            parsed = JSON.parse(cleanText);
-                        } catch { }
-
-                        if (parsed) {
-                            return (
-                                <div className="w-full bg-white rounded-xl shadow-lg border border-amber-200 p-4 mb-4 animate-in fade-in slide-in-from-bottom-2">
-                                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
-                                        <span className={`px-2 py-0.5 rounded-full text-white text-xs font-bold ${parsed.riskLevel === 'SAFE' ? 'bg-green-500' :
-                                            parsed.riskLevel === 'DANGER' ? 'bg-red-500' : 'bg-amber-500'
-                                            }`}>
-                                            {parsed.riskLevel === 'SAFE' ? '안전' : parsed.riskLevel === 'DANGER' ? '위험' : '주의'}
-                                        </span>
-                                        <h3 className="text-sm font-bold text-gray-800">AI 분석 결과</h3>
-                                        <button onClick={() => setAnalysisResult(null)} className="ml-auto text-gray-400 hover:text-gray-600">✕</button>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-500 mb-1">감지된 소리</p>
-                                            <p className="text-sm text-gray-800">{parsed.description}</p>
-                                        </div>
-                                        <div className="bg-amber-50 p-3 rounded-lg">
-                                            <p className="text-xs font-bold text-amber-700 mb-1">💡 행동 요령</p>
-                                            <p className="text-sm text-amber-900 leading-snug">{parsed.action}</p>
-                                        </div>
-                                        {(parsed.riskLevel === 'SAFE' || analysisResult.includes('안전')) && (
-                                            <button
-                                                onClick={() => {
-                                                    setAnalysisResult(null);
-                                                    setCurrentView('safe');
-                                                }}
-                                                className="w-full mt-2 bg-green-600 text-white py-2 rounded-lg text-xs font-bold"
-                                            >
-                                                안전 화면으로 복귀
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        } else {
-                            // Text fallback
-                            return (
-                                <div className="w-full bg-white rounded-xl shadow-lg border border-amber-200 p-4 mb-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="text-sm font-bold text-gray-800">분석 결과</h3>
-                                        <button onClick={() => setAnalysisResult(null)} className="text-gray-400">✕</button>
-                                    </div>
-                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{analysisResult}</p>
-                                </div>
-                            );
-                        }
-                    })()}
 
                     <button
-                        onClick={stopListening}
-                        className="text-amber-600 underline text-sm hover:text-amber-800 transition-colors"
+                        onClick={() => setCurrentView('manual')}
+                        className="mt-8 text-amber-700/40 text-xs font-bold hover:underline"
                     >
-                        소리 감지 완전히 끄기
+                        안전 행동 매뉴얼 확인 <ArrowRight size={14} className="inline ml-1" />
                     </button>
-                </div>
+                </motion.div>
             </main>
-
-
-
-
         </div>
     );
 };

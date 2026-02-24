@@ -63,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, setCurrentVie
                         <div>
                             <p className="font-semibold text-gray-800 mb-2">[ 안전 알림 ]</p>
                             <div className="ml-3 space-y-1.5 text-gray-600">
-                                <button onClick={() => handleNavigation('disaster-info')} className="block hover:text-orange-500 transition-colors text-left font-medium">• 재난 정보 센터 🔔</button>
+                                <button onClick={() => handleNavigation('disaster-info')} className="block hover:text-orange-500 transition-colors text-left font-medium">• 재난 정보 센터 🚨</button>
                                 <button onClick={() => handleNavigation('manual')} className="block hover:text-red-500 transition-colors text-left">• 재난 행동 요령 (보기)</button>
                                 <button onClick={() => handleNavigation('shelter')} className="block hover:text-blue-600 transition-colors text-left">• 재난 대피 시설</button>
                             </div>

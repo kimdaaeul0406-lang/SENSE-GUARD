@@ -1,91 +1,33 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Menu, Settings, Moon } from 'lucide-react';
+import { ShieldCheck, Menu, Settings, Moon, Sun, MonitorOff } from 'lucide-react';
+import { WaveformVisualizer } from './WaveformVisualizer';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SafeViewProps {
     setCurrentView: (view: string) => void;
     setSidebarOpen: (open: boolean) => void;
     stopListening: () => void;
-    soundLevel?: number; // Kept for backward compatibility, but prefer stream
-    stream?: MediaStream | null; // New prop for direct visualization
+    soundLevel?: number;
+    stream?: MediaStream | null;
+    isDarkMode: boolean;
+    setIsDarkMode: (val: boolean) => void;
 }
 
-export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOpen, stopListening, soundLevel = 0, stream }) => {
-
-    // Direct DOM ref for high-performance animation
-    const glowRef = React.useRef<HTMLDivElement>(null);
-
-    // Animation Loop using local AudioContext (if stream provided)
-    React.useEffect(() => {
-        if (!stream) {
-            return;
-        }
-
-        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
-        const audioCtx = new AudioContextClass();
-        const analyser = audioCtx.createAnalyser();
-        const source = audioCtx.createMediaStreamSource(stream);
-
-        source.connect(analyser);
-        analyser.fftSize = 256;
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        let animationId: number;
-
-        const renderFrame = () => {
-            analyser.getByteFrequencyData(dataArray);
-
-            // Calculate RMS (Volume)
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-                sum += dataArray[i] * dataArray[i];
-            }
-            const rms = Math.sqrt(sum / dataArray.length);
-
-            // Boost visual effect
-            // Scale: 1 ~ 1.5
-            const scale = 1 + (rms / 60);
-            // Opacity: 0.3 ~ 0.8
-            const opacity = 0.3 + (rms / 150);
-
-            if (glowRef.current) {
-                glowRef.current.style.transform = `scale(${scale})`;
-                glowRef.current.style.opacity = `${opacity}`;
-            }
-
-            animationId = requestAnimationFrame(renderFrame);
-        };
-
-        renderFrame();
-
-        return () => {
-            cancelAnimationFrame(animationId);
-            if (audioCtx.state !== 'closed') audioCtx.close();
-        };
-    }, [stream]);
-
-    const [isSleepMode, setIsSleepMode] = useState(false);
+export const SafeView: React.FC<SafeViewProps> = ({
+    setCurrentView,
+    setSidebarOpen,
+    stopListening,
+    soundLevel = 0,
+    stream,
+    isDarkMode,
+    setIsDarkMode
+}) => {
+    const [isSleeping, setIsSleeping] = useState(false);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex flex-col relative">
-            {/* Sleep Mode Overlay */}
-            {isSleepMode && (
-                <div
-                    className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center cursor-pointer"
-                    onClick={() => setIsSleepMode(false)}
-                >
-                    <div className="flex flex-col items-center opacity-30 animate-pulse">
-                        <ShieldCheck size={64} className="text-emerald-500 mb-4" />
-                        <p className="text-emerald-500 font-medium text-lg">SENSE-GUARD 작동 중</p>
-                        <p className="text-gray-500 text-sm mt-2">화면을 터치하면 다시 켜집니다</p>
-                    </div>
-                    {/* Floating Battery Saver Icon to indicate mode */}
-                    <div className="absolute bottom-10 text-gray-800 text-xs">
-                        절전 모드 실행 중
-                    </div>
-                </div>
-            )}
+        <div className={`min-h-screen flex flex-col relative overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-slate-950' : 'bg-[#f7fdf9]'}`}>
 
-            <header className="bg-white/80 backdrop-blur-md border-b border-emerald-200 px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20">
+            <header className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800 text-white' : 'bg-white/50 border-emerald-50 text-gray-500'} backdrop-blur-md border-b px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20`}>
                 <button
                     onClick={() => {
                         if (window.confirm('소리 감지를 중단하고 홈으로 돌아가시겠습니까?')) {
@@ -94,77 +36,79 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                     }}
                     className="hover:opacity-70 transition-opacity"
                 >
-                    <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
+                    <h1 className={`text-lg font-bold ${isDarkMode ? 'text-emerald-400' : 'text-[#059669]'}`}>SENSE-GUARD</h1>
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                     <button
-                        onClick={() => setIsSleepMode(true)}
-                        className="p-2 hover:bg-emerald-50 rounded-full transition-colors"
-                        aria-label="절전 모드"
+                        onClick={() => setIsDarkMode(!isDarkMode)}
+                        className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-yellow-400' : 'hover:bg-emerald-50 text-emerald-500'}`}
                     >
-                        <Moon size={24} className="text-emerald-700" />
+                        {isDarkMode ? <Sun size={22} /> : <Moon size={22} />}
                     </button>
-                    <button onClick={() => setCurrentView('settings')} className="p-2 hover:bg-emerald-50 rounded-full transition-colors">
-                        <Settings size={24} className="text-emerald-700" />
+                    <button onClick={() => setCurrentView('settings')} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-emerald-50 text-emerald-500'}`}>
+                        <Settings size={22} />
                     </button>
-                    <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-emerald-100 rounded-lg transition-colors">
-                        <Menu size={22} className="text-emerald-700" />
+                    <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-emerald-50 text-emerald-500'}`}>
+                        <Menu size={22} />
                     </button>
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full">
+            <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full z-10">
                 <div className="w-full max-w-md mx-auto flex flex-col items-center mt-4">
                     <div className="relative w-64 h-64 mb-4 flex items-center justify-center">
-                        {/* Ambient Glow Background */}
-                        <div
-                            ref={glowRef}
-                            className={`absolute w-48 h-48 rounded-full bg-emerald-400/40 filter blur-[60px] transition-all duration-100 ${!stream ? 'animate-pulse' : ''}`}
-                            style={{
-                                transform: !stream ? 'scale(1)' : undefined
-                            }}
-                        ></div>
-
-                        {/* Main Shield Container - Circle Glassmorphism Style */}
-                        <div className="relative w-40 h-40 bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-xl border border-white/50 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/10 z-10 transition-transform duration-300">
-                            {/* Inner detail for premium look */}
-                            <div className="absolute inset-2 rounded-full border border-white/30 bg-gradient-to-br from-emerald-50/50 to-emerald-100/10" />
-
-                            <ShieldCheck size={72} className="text-emerald-500 relative z-20 drop-shadow-sm" strokeWidth={1.5} />
-
-                            {/* Status Indicator Dot */}
-                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-emerald-500 rounded-full animate-ping z-20 opacity-75"></div>
-                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-emerald-500 rounded-full z-20"></div>
-                        </div>
+                        <motion.div
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                            className={`relative w-40 h-40 backdrop-blur-xl border rounded-full flex items-center justify-center shadow-xl transition-all duration-500 ${isDarkMode
+                                ? 'bg-slate-800/40 border-slate-700'
+                                : 'bg-white border-emerald-50/50'
+                                }`}
+                        >
+                            <ShieldCheck size={72} className={`${isDarkMode ? 'text-emerald-500/60' : 'text-[#10b981]'} relative z-20`} strokeWidth={1.5} />
+                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-[#10b981] rounded-full animate-ping z-20 opacity-40"></div>
+                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-[#10b981] rounded-full z-20"></div>
+                        </motion.div>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-emerald-600 mb-1">안전 감시 중</h2>
-                    <p className="text-sm text-emerald-700 text-center mb-6">
-                        주변 소리를 실시간으로 분석하고 있습니다.<br />
-                        <span className="text-xs text-emerald-600/80">* 화면이 켜져 있어야 알림이 울립니다.</span>
+                    <div className="w-full max-w-[160px] mb-8 opacity-40">
+                        <WaveformVisualizer stream={stream || null} isActive={true} color={isDarkMode ? "#059669" : "#10b981"} />
+                    </div>
+
+                    <p className={`text-sm text-center mb-8 ${isDarkMode ? 'text-slate-400' : 'text-[#059669]'} font-bold`}>
+                        안전 감시 중<br />
+                        <span className="text-xs font-medium opacity-80 mt-1 block">주변 소리를 실시간으로 분석하고 있습니다.</span>
                     </p>
 
-                    <div className="w-full flex flex-col gap-3 mb-4">
+                    <div className="w-full flex flex-col gap-3">
+                        {/* 1번 사진 스타일 복구 (소리 감지 중지) */}
                         <button
                             onClick={stopListening}
-                            className="w-full bg-white text-emerald-600 border-2 border-emerald-500 py-3 rounded-xl text-sm font-semibold shadow-lg hover:bg-emerald-50 transition-all"
+                            className={`w-full py-4 rounded-2xl text-base font-bold shadow-sm transition-all border-2 ${isDarkMode
+                                ? 'bg-slate-900 text-emerald-400 border-slate-700 hover:bg-slate-800'
+                                : 'bg-white text-[#059669] border-[#10b981] hover:bg-emerald-50'
+                                }`}
                         >
                             소리 감지 중지
                         </button>
 
+                        {/* 1번 사진 스타일 복구 (수면/절전 모드) */}
                         <button
-                            onClick={() => setIsSleepMode(true)}
-                            className="w-full bg-emerald-600 text-white border-2 border-transparent py-3 rounded-xl text-sm font-semibold shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                            onClick={() => setIsSleeping(true)}
+                            className="w-full bg-[#059669] text-white py-4 rounded-2xl text-base font-bold shadow-lg hover:bg-[#047857] transition-all active:scale-95 flex items-center justify-center gap-2"
                         >
-                            <Moon size={18} />
+                            <Moon size={20} />
                             수면/절전 모드 (화면 끄기)
                         </button>
 
                         <button
                             onClick={() => setCurrentView('ai-chat')}
-                            className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white py-3 rounded-xl text-sm font-semibold shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                            className={`w-full py-4 rounded-2xl text-sm font-semibold shadow-sm transition-all border flex items-center justify-center gap-2 active:scale-95 mt-1 ${isDarkMode
+                                    ? 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
+                                    : 'bg-[#f8fafc] border-slate-200 text-slate-600 hover:bg-slate-100'
+                                }`}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M12 8V4H8" />
                                 <rect width="16" height="12" x="4" y="8" rx="2" />
                                 <path d="M2 14h2" />
@@ -175,10 +119,29 @@ export const SafeView: React.FC<SafeViewProps> = ({ setCurrentView, setSidebarOp
                             AI 안전 도우미
                         </button>
                     </div>
-
-
                 </div>
             </main>
+
+            <AnimatePresence>
+                {isSleeping && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsSleeping(false)}
+                        className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center cursor-pointer"
+                    >
+                        <motion.div
+                            animate={{ opacity: [0.1, 0.2, 0.1] }}
+                            transition={{ duration: 5, repeat: Infinity }}
+                            className="flex flex-col items-center gap-4"
+                        >
+                            <Moon size={40} className="text-emerald-950" />
+                            <p className="text-emerald-950 text-xs font-medium">감지 중...</p>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
