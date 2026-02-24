@@ -74,15 +74,25 @@ export const useSoundAnalyzer = ({
     };
 
     const stopListening = () => {
+        console.log("--- STOPPING SOUND ANALYSIS ---");
         if (micStreamRef.current) {
-            micStreamRef.current.getTracks().forEach(track => track.stop());
+            micStreamRef.current.getTracks().forEach(track => {
+                track.stop();
+                console.log("Track stopped:", track.label);
+            });
+            micStreamRef.current = null;
         }
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
         }
         if (audioContextRef.current) {
-            audioContextRef.current.close();
+            audioContextRef.current.close().then(() => {
+                console.log("AudioContext closed successfully");
+            });
+            audioContextRef.current = null;
         }
+        analyserRef.current = null;
         setIsListening(false);
         setSoundLevel(0);
         onStatusChange('main');
@@ -108,10 +118,12 @@ export const useSoundAnalyzer = ({
 
         if (!isAnalyzing) {
             if (normalizedLevel > 50) {
-                if (currentViewRef.current !== 'danger' && currentViewRef.current !== 'warning') {
+                const nowLoud = Date.now();
+                // 2초 쿨다운 추가 및 중복 호출 방지
+                if (currentViewRef.current !== 'danger' && currentViewRef.current !== 'warning' && (nowLoud - lastLoudTimeRef.current > 2000)) {
                     onThresholdExceeded();
+                    lastLoudTimeRef.current = nowLoud;
                 }
-                lastLoudTimeRef.current = Date.now();
             }
 
             // Auto reset logic

@@ -25,8 +25,9 @@ export const useAIProcessor = () => {
             }
 
             const data = JSON.parse(cleanedText);
+            const normalizedRisk = (data.riskLevel || 'UNKNOWN').toUpperCase();
             return {
-                riskLevel: data.riskLevel || 'UNKNOWN',
+                riskLevel: normalizedRisk,
                 description: data.description || '분석 결과를 파싱할 수 없습니다.',
                 action: data.action || '상황을 확인해 주세요.'
             };
@@ -59,6 +60,7 @@ export const useAIProcessor = () => {
     const performAutoAnalysis = async (stream: MediaStream, onResult: (data: AIResult) => void) => {
         if (!stream || isAutoAnalyzing) return;
 
+        setAiAnalysisResult(null); // 새로운 분석 시작 전 결과 초기화
         setIsAutoAnalyzing(true);
         console.log("Starting Auto AI Analysis...");
 

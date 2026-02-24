@@ -12,7 +12,14 @@ export const DangerView: React.FC<any> = ({
 }) => {
     // 실제 AI 분석 결과가 있으면 그것을 우선 사용
     const displayAnalysis = aiAutoResult?.description || "매우 위험한 소리가 감지되었습니다! 즉시 대피하십시오.";
-    const displaySoundType = aiAutoResult?.riskLevel === 'DANGER' ? (aiAutoResult.description.split(' ')[0] || "위험 상황 발생") : "위험 상황 발생";
+
+    let displaySoundType = "위험 상황 발생";
+    if (aiAutoResult) {
+        if (aiAutoResult.riskLevel === 'DANGER') displaySoundType = aiAutoResult.description.split(' ')[0] || "🚨 긴급 위험 상황";
+        else if (aiAutoResult.riskLevel === 'WARNING') displaySoundType = "⚠️ 주의 수준 소음";
+        else displaySoundType = "✅ 상황 종료";
+    }
+
     const [isLocalAnalyzing, setIsLocalAnalyzing] = useState(true);
 
     useEffect(() => {
@@ -78,7 +85,13 @@ export const DangerView: React.FC<any> = ({
                     </div>
 
                     <div className="w-full space-y-3 max-w-[320px]">
-                        {/* 사용자님이 요청하신 2번째 사진의 깔끔한 스타일 적용 */}
+                        <button
+                            onClick={startListening}
+                            className="w-full bg-rose-500/80 text-white py-4 rounded-2xl text-base font-bold shadow-md hover:bg-rose-600/80 transition-all flex items-center justify-center gap-2"
+                        >
+                            확인했습니다
+                        </button>
+
                         <button
                             onClick={() => setCurrentView('ai-chat')}
                             className="w-full bg-[#f8fafc] border border-slate-200 text-slate-600 py-4 rounded-2xl text-sm font-semibold shadow-sm hover:bg-slate-100 transition-all flex items-center justify-center gap-2 active:scale-95"
@@ -96,7 +109,7 @@ export const DangerView: React.FC<any> = ({
 
                         <button
                             onClick={() => window.location.href = 'tel:119'}
-                            className="w-full bg-rose-600/80 text-white py-4 rounded-2xl text-lg font-bold shadow-lg shadow-rose-100 hover:bg-rose-700 transition-all flex items-center justify-center gap-2 animate-bounce mt-4"
+                            className="w-full bg-rose-600/20 text-rose-600 py-4 rounded-2xl text-lg font-bold shadow-sm border border-rose-200 hover:bg-rose-100 transition-all flex items-center justify-center gap-2 mt-2"
                         >
                             <Phone size={22} />
                             119 긴급 신고

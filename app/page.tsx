@@ -177,7 +177,7 @@ export default function Home() {
               setCurrentView={setCurrentView}
               setSidebarOpen={setSidebarOpen}
               stopListening={stopListening}
-              onConfirm={handleConfirm}
+              startListening={handleConfirm}
               onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
               aiAutoResult={aiAnalysisResult}
               isAutoAnalyzing={isAutoAnalyzing}
@@ -188,7 +188,7 @@ export default function Home() {
               setCurrentView={setCurrentView}
               setSidebarOpen={setSidebarOpen}
               stopListening={stopListening}
-              onConfirm={handleConfirm}
+              startListening={handleConfirm}
               onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
               aiAutoResult={aiAnalysisResult}
               isAutoAnalyzing={isAutoAnalyzing}

@@ -12,7 +12,14 @@ export const WarningView: React.FC<any> = ({
 }) => {
     // 실제 AI 분석 결과가 있으면 그것을 우선 사용
     const displayAnalysis = aiAutoResult?.description || "주변에서 큰 소리가 감지되었습니다. 주의가 필요합니다.";
-    const displaySoundType = aiAutoResult?.riskLevel === 'WARNING' ? (aiAutoResult.description.split(' ')[0] || "감지된 소음") : "미확인 소음";
+
+    let displaySoundType = "미확인 소음";
+    if (aiAutoResult) {
+        if (aiAutoResult.riskLevel === 'DANGER') displaySoundType = "🚨 위험 상황 감지";
+        else if (aiAutoResult.riskLevel === 'WARNING') displaySoundType = aiAutoResult.description.split(' ')[0] || "⚠️ 주의 필요 소음";
+        else displaySoundType = "✅ 일상 소음";
+    }
+
     const [isLocalAnalyzing, setIsLocalAnalyzing] = useState(true);
 
     useEffect(() => {

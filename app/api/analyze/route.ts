@@ -50,7 +50,7 @@ Return the response strictly in the following JSON format (no markdown, no code 
 
 **DANGER** (only these):
 - Fire Alarm (continuous repeating beep at fixed interval)
-- Emergency Siren (rising and falling single tone, NO melody)
+- Emergency Siren (Ambulance, Fire truck, Police) - This includes rising/falling tones or two-tone "pi-po pi-po" sounds. NO melody.
 - Smoke Detector (high-pitched rapid beeping)
 - Explosion sound
 
@@ -69,7 +69,7 @@ Return the response strictly in the following JSON format (no markdown, no code 
 - Clapping, cheering
 
 === CRITICAL RULES (MUST FOLLOW) ===
-1. **MUSIC vs SIREN**: If the sound has melody, rhythm, harmony, lyrics, or beat → it is MUSIC → return SAFE. Sirens have NO melody - they are a single repeating tone.
+1. **MUSIC vs SIREN**: If the sound has melody, rhythm, harmony, lyrics, or beat → it is MUSIC → return SAFE. HOWEVER, Emergency vehicle sirens (Ambulance, Fire, Police) often have TWO TONES (high-low) or RISING-FALLING tones. These are NOT music and NOT melody. They are DANGER.
 2. **When unsure**: Return SAFE. False alarms are worse than missed detections.
 3. **Default to SAFE**: Unless you are 90%+ confident it is a real emergency sound, return SAFE.
 4. Horn honking or car sounds → SAFE (traffic noise).
