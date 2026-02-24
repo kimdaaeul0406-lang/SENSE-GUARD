@@ -202,7 +202,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                     <h3 className="text-sm font-semibold text-gray-800 mb-4 pt-2 border-t border-gray-100">도움 요청</h3>
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             if (!guardianPhone) {
                                 if (window.confirm('비상 연락처가 설정되지 않았습니다.\n마이페이지에서 연락처를 등록하시겠습니까?')) {
                                     setCurrentView('mypage');
@@ -210,12 +210,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 return;
                             }
 
+                            // 1. 위치 정보 가져오기 시도
+                            let locationLink = "";
+                            try {
+                                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                        timeout: 5000,
+                                        enableHighAccuracy: true
+                                    });
+                                });
+                                const lat = position.coords.latitude;
+                                const lng = position.coords.longitude;
+                                locationLink = `\n📍 현재 위치 확인: https://www.google.com/maps?q=${lat},${lng}`;
+                            } catch (error) {
+                                console.warn("Failed to get location:", error);
+                                // 위치 정보를 가져오지 못해도 문자는 발송 진행
+                            }
+
                             // Mobile Check
                             const userAgent = navigator.userAgent.toLowerCase();
                             const isMobile = /iphone|ipad|ipod|android/i.test(userAgent);
                             const isIos = /iphone|ipad|ipod/i.test(userAgent);
 
-                            const message = encodeURIComponent('🚨 [SENSE-GUARD 긴급 알림] \n지금 위험한 상황인 것 같습니다. 제 위치를 확인해주세요! \n(이 메시지는 청각장애인 안전 앱 SENSE-GUARD에서 발송되었습니다.)');
+                            const messageText = `🚨 [SENSE-GUARD 긴급 알림] \n지금 위급한 상황인 것 같습니다. 제 위치를 확인해주세요!${locationLink}\n(SENSE-GUARD 자동 발신)`;
+                            const message = encodeURIComponent(messageText);
 
                             // iOS uses '&', Android/Others use '?'
                             const separator = isIos ? '&' : '?';
@@ -224,7 +242,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             // PC/Desktop Feedback
                             if (!isMobile) {
                                 const confirmed = window.confirm(
-                                    `[PC/웹 환경 시뮬레이션]\n\n실제 모바일 환경에서는 메시지 앱이 실행됩니다.\n\n수신번호: ${guardianPhone}\n내용: ${decodeURIComponent(message)}\n\n(확인을 누르면 SMS 프로토콜 실행을 시도합니다)`
+                                    `[PC/웹 환경 시뮬레이션]\n\n실제 모바일 환경에서는 메시지 앱이 실행됩니다.\n\n수신번호: ${guardianPhone}\n내용: ${messageText}\n\n(확인을 누르면 SMS 프로토콜 실행을 시도합니다)`
                                 );
                                 if (confirmed) {
                                     window.location.href = link;

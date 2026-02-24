@@ -1,12 +1,12 @@
 /**
  * 오디오 분석 API Route
  * Gemini REST API (fetch 기반) - SDK 미사용
- * 모델: gemini-2.5-flash
+ * 모델: gemini-2.0-flash
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 export async function POST(req: NextRequest) {
     try {
@@ -48,32 +48,33 @@ Return the response strictly in the following JSON format (no markdown, no code 
 
 === CLASSIFICATION RULES (STRICT) ===
 
-**DANGER** (only these):
+**DANGER** (Critical emergencies):
 - Fire Alarm (continuous repeating beep at fixed interval)
-- Emergency Siren (Ambulance, Fire truck, Police) - This includes rising/falling tones or two-tone "pi-po pi-po" sounds. NO melody.
+- Emergency Siren (Ambulance, Fire truck, Police) - This includes rising/falling tones, two-tone "pi-po pi-po", or wailing sounds.
 - Smoke Detector (high-pitched rapid beeping)
-- Explosion sound
+- Explosion or gunshot sound
+- Civil defense siren (long steady or rising/falling wail)
 
-**WARNING**:
-- Screaming / aggressive shouting
-- Glass breaking
-- Aggressive dog barking
+**WARNING** (Potential threats):
+- Screaming / aggressive shouting / crying
+- Glass breaking / loud crashing
+- Aggressive dog barking / growling
+- Door being kicked or pounded
 
-**SAFE** (these are NEVER dangerous):
-- Music, songs, melodies, beats, instruments (ANY music = SAFE, even if loud)
-- Human conversation, talking, laughing
-- Coughing, sneezing, typing
-- Object dropping, door closing
-- Traffic noise, car horns
-- TV/video audio
-- Clapping, cheering
+**SAFE** (Normal environment):
+- Music, songs, melodies, beats, instruments (unless it is an official emergency siren)
+- Human conversation, talking, laughing (normal volume)
+- Coughing, sneezing, typing, vacuum cleaner
+- Water running, wind noise
+- Traffic noise (engines, tires), car horns (single or double honks)
+- TV/video audio at normal volume
 
 === CRITICAL RULES (MUST FOLLOW) ===
-1. **MUSIC vs SIREN**: If the sound has melody, rhythm, harmony, lyrics, or beat → it is MUSIC → return SAFE. HOWEVER, Emergency vehicle sirens (Ambulance, Fire, Police) often have TWO TONES (high-low) or RISING-FALLING tones. These are NOT music and NOT melody. They are DANGER.
-2. **When unsure**: Return SAFE. False alarms are worse than missed detections.
-3. **Default to SAFE**: Unless you are 90%+ confident it is a real emergency sound, return SAFE.
-4. Horn honking or car sounds → SAFE (traffic noise).
-5. Any sound with words/lyrics → SAFE (it is media or conversation).
+1. **SIREN vs MUSIC**: If you hear a siren-like sound (Ambulance, Fire, Police), it is DANGER even if it sounds "clean" or "musical" to some ears. These specific patterns (Hi-Lo, Wail, Yelp) take priority.
+2. **False Alarms vs Safety**: While false alarms should be minimized, prioritize user safety. If you are 75%+ confident it is an emergency, mark it accordingly.
+3. If it is definitely a Car Horn (honk honk), it is SAFE. But if it is any Emergency Vehicle Siren, it is DANGER.
+4. Any sound with clear lyrics or harmony is likely media (SAFE).
+5. If the sound is too muffled to identify but clearly very loud and rhythmic (like an alarm), default to WARNING.
 `;
 
         // Gemini REST API 호출
@@ -97,7 +98,7 @@ Return the response strictly in the following JSON format (no markdown, no code 
                     }
                 ],
                 generationConfig: {
-                    temperature: 0.2,
+                    temperature: 0.1,
                     maxOutputTokens: 512,
                 }
             }),

@@ -80,16 +80,36 @@ export const useAIProcessor = () => {
 
                 try {
                     const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+
+                    if (!res.ok) throw new Error('Network error');
+
                     const rawData = await res.json();
+
+                    if (rawData.error) throw new Error(rawData.error);
+
                     const result = parseAIResult(rawData.result);
                     setAiAnalysisResult(result);
                     onResult(result);
-                } catch (err) {
-                    console.error("Auto AI Analysis failed", err);
-                } finally {
+
+                    // 위험 상황(DANGER)이면 쿨타임을 1초로 단축하여 더 빠르게 다음 소리 감지 준비
+                    const cooldown = result.riskLevel === 'DANGER' ? 1000 : 2000;
                     setTimeout(() => {
                         setIsAutoAnalyzing(false);
-                    }, 2000);
+                    }, cooldown);
+
+                } catch (err) {
+                    console.error("Auto AI Analysis failed", err);
+                    const errorResult: AIResult = {
+                        riskLevel: 'WARNING',
+                        description: '현재 네트워크 연결이 원활하지 않아 분석이 지연되고 있습니다.',
+                        action: '주변을 직접 확인하시고 위험이 감지되면 즉시 대피하세요.'
+                    };
+                    setAiAnalysisResult(errorResult);
+                    onResult(errorResult);
+
+                    setTimeout(() => {
+                        setIsAutoAnalyzing(false);
+                    }, 4000); // 에러 시에는 좀 더 긴 쿨타임
                 }
             };
 
@@ -125,7 +145,17 @@ export const useAIProcessor = () => {
 
                     try {
                         const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+
+                        if (!res.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+
                         const data = await res.json();
+
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+
                         const result = parseAIResult(data.result);
 
                         const riskText = result.riskLevel === 'DANGER' ? '심각 (🚨 즉시 대피 필요)'
@@ -134,14 +164,15 @@ export const useAIProcessor = () => {
 
                         resolve(`1. 🔍 소리 분석: ${result.description}\n\n2. ⚠️ 위험 판단: ${riskText}\n\n3. ✅ 행동 가이드: ${result.action}`);
                     } catch (err) {
-                        resolve(`분석 중 오류가 발생했습니다: ${(err as Error).message}`);
+                        console.error("Manual analysis error:", err);
+                        resolve(`1. 🔍 분석 불가: 인터넷 연결이 불안정하거나 서버 오류가 발생했습니다.\n\n2. ⚠️ 위험 판단: [확인 필요]\n\n3. ✅ 행동 가이드: 현재 소리를 직접 식별하기 어렵습니다. 주변 상황을 눈으로 직접 확인하시고, 위험이 느껴진다면 즉시 안전한 곳으로 이동하세요.`);
                     }
                 };
 
                 mediaRecorder.start();
                 setTimeout(() => mediaRecorder.stop(), 5000);
             } catch (e) {
-                resolve("오디오 녹음을 시작할 수 없습니다.");
+                resolve("오디오 녹음을 시작할 수 없거나 기기에서 지원하지 않는 형식입니다.");
             }
         }).finally(() => {
             setIsAnalyzing(false);

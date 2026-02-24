@@ -107,7 +107,7 @@ export const useSoundAnalyzer = ({
         const sum = dataArray.reduce((acc, val) => acc + val * val, 0);
         const rms = Math.sqrt(sum / dataArray.length);
 
-        const baseThreshold = 150 - sensitivityRef.current;
+        const baseThreshold = 165 - sensitivityRef.current;
         const normalizedLevel = Math.min(100, (rms / baseThreshold) * 100);
 
         const now = Date.now();
@@ -117,7 +117,7 @@ export const useSoundAnalyzer = ({
         }
 
         if (!isAnalyzing) {
-            if (normalizedLevel > 50) {
+            if (normalizedLevel > 65) {
                 const nowLoud = Date.now();
                 // 2초 쿨다운 추가 및 중복 호출 방지
                 if (currentViewRef.current !== 'danger' && currentViewRef.current !== 'warning' && (nowLoud - lastLoudTimeRef.current > 2000)) {
