@@ -27,6 +27,7 @@ export const usePersistentSettings = () => {
     });
     const [notificationHistory, setNotificationHistory] = useState<any[]>([]);
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [hasSeenIntro, setHasSeenIntro] = useState(false);
     const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
     // Initial Load
@@ -52,6 +53,9 @@ export const usePersistentSettings = () => {
 
             const savedDarkMode = localStorage.getItem('isDarkMode');
             if (savedDarkMode) setIsDarkMode(JSON.parse(savedDarkMode));
+
+            const savedIntro = localStorage.getItem('hasSeenIntro');
+            if (savedIntro) setHasSeenIntro(JSON.parse(savedIntro));
         } catch (e) {
             console.error("Failed to load settings:", e);
         } finally {
@@ -139,6 +143,7 @@ export const usePersistentSettings = () => {
             localStorage.setItem('notificationTypes', JSON.stringify(notificationTypes));
             localStorage.setItem('notificationMethod', JSON.stringify(notificationMethod));
             localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
+            localStorage.setItem('hasSeenIntro', JSON.stringify(hasSeenIntro));
         }
     }, [sensitivity, notifications, notificationTypes, notificationMethod, isSettingsLoaded]);
 
@@ -151,6 +156,7 @@ export const usePersistentSettings = () => {
         notificationMethod, setNotificationMethod,
         notificationHistory, setNotificationHistory,
         isDarkMode, setIsDarkMode,
+        hasSeenIntro, setHasSeenIntro,
         isSettingsLoaded
     };
 };

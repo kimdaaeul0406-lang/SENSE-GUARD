@@ -21,8 +21,11 @@ import { useSoundAnalyzer } from '../lib/hooks/useSoundAnalyzer';
 import { useAIProcessor } from '../lib/hooks/useAIProcessor';
 import { useNotifications } from '../lib/hooks/useNotifications';
 
+import { IntroView } from '../components/IntroView';
+import { GuardianSetupView } from '../components/GuardianSetupView';
+
 export default function Home() {
-  const [currentView, setCurrentView] = useState('main');
+  const [currentView, setCurrentView] = useState('intro');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const lastStateChangeTimeRef = useRef(0);
 
@@ -35,6 +38,7 @@ export default function Home() {
     notificationMethod, setNotificationMethod,
     notificationHistory, setNotificationHistory,
     isDarkMode, setIsDarkMode,
+    hasSeenIntro, setHasSeenIntro,
     isSettingsLoaded
   } = usePersistentSettings();
 
@@ -134,6 +138,8 @@ export default function Home() {
     else setCurrentView('main');
   };
 
+  if (!isSettingsLoaded) return null;
+
   return (
     <div className="font-sans antialiased text-black" suppressHydrationWarning>
       <Sidebar
@@ -154,6 +160,32 @@ export default function Home() {
           transition={{ duration: 0.25, ease: "easeInOut" }}
           className="min-h-screen"
         >
+          {currentView === 'intro' && (
+            <IntroView
+              hasSeenIntro={hasSeenIntro}
+              onComplete={(isGuest) => {
+                setHasSeenIntro(true);
+                if (isGuest) {
+                  setCurrentView('main');
+                } else if (user) {
+                  setCurrentView('main');
+                } else {
+                  setCurrentView('auth');
+                }
+              }}
+            />
+          )}
+
+          {currentView === 'guardian-setup' && (
+            <GuardianSetupView
+              userName={user?.name || ""}
+              onComplete={(phone) => {
+                if (phone) setGuardianPhone(phone);
+                setCurrentView('main');
+              }}
+            />
+          )}
+
           {currentView === 'main' && (
             <MainView
               setCurrentView={setCurrentView}
@@ -221,6 +253,12 @@ export default function Home() {
               onLoginSuccess={(userData) => {
                 setUser(userData);
                 localStorage.setItem('user', JSON.stringify(userData));
+                // 로그인 성공 시 보호자 번호가 없으면 설정 화면으로, 있으면 메인으로
+                if (!guardianPhone) {
+                  setCurrentView('guardian-setup');
+                } else {
+                  setCurrentView('main');
+                }
               }}
             />
           )}
