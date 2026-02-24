@@ -38,6 +38,7 @@ export default function Home() {
     notificationMethod, setNotificationMethod,
     notificationHistory, setNotificationHistory,
     isDarkMode, setIsDarkMode,
+    isColorBlindMode, setIsColorBlindMode,
     hasSeenIntro, setHasSeenIntro,
     isSettingsLoaded
   } = usePersistentSettings();
@@ -62,11 +63,11 @@ export default function Home() {
     if (view !== 'warning' && view !== 'danger') return;
 
     if (notificationMethod.sound) {
-      playAlertSound(view as 'warning' | 'danger');
+      playAlertSound(view as 'warning' | 'danger', isColorBlindMode);
     }
 
     if (notificationMethod.vibration) {
-      vibrateDevice(view === 'danger');
+      vibrateDevice(view === 'danger', isColorBlindMode);
     }
 
     if (notificationMethod.screen) {
@@ -141,7 +142,7 @@ export default function Home() {
   if (!isSettingsLoaded) return null;
 
   return (
-    <div className="font-sans antialiased text-black" suppressHydrationWarning>
+    <div className={`font-sans antialiased text-black ${isColorBlindMode ? 'color-blind-mode' : ''}`} suppressHydrationWarning>
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -202,6 +203,7 @@ export default function Home() {
               stream={micStream}
               isDarkMode={isDarkMode}
               setIsDarkMode={setIsDarkMode}
+              isColorBlindMode={isColorBlindMode}
             />
           )}
           {currentView === 'warning' && (
@@ -213,6 +215,7 @@ export default function Home() {
               onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
               aiAutoResult={aiAnalysisResult}
               isAutoAnalyzing={isAutoAnalyzing}
+              isColorBlindMode={isColorBlindMode}
             />
           )}
           {currentView === 'danger' && (
@@ -225,6 +228,7 @@ export default function Home() {
               aiAutoResult={aiAnalysisResult}
               isAutoAnalyzing={isAutoAnalyzing}
               guardianPhone={guardianPhone}
+              isColorBlindMode={isColorBlindMode}
             />
           )}
           {currentView === 'settings' && (
@@ -245,6 +249,8 @@ export default function Home() {
               setSensitivity={setSensitivity}
               guardianPhone={guardianPhone}
               setGuardianPhone={setGuardianPhone}
+              isColorBlindMode={isColorBlindMode}
+              setIsColorBlindMode={setIsColorBlindMode}
             />
           )}
           {currentView === 'auth' && (
@@ -280,6 +286,7 @@ export default function Home() {
             <ManualView
               setCurrentView={setCurrentView}
               onBack={handleBackFromSubView}
+              isColorBlindMode={isColorBlindMode}
             />
           )}
           {currentView === 'mypage' && (
@@ -315,6 +322,33 @@ export default function Home() {
                 .animate-pulse-fast {
                     animation: pulse-fast 1.5s ease-in-out infinite;
                 }
+                
+                /* 색약 보정 모드 전용 고대비 및 폰트 확대 스타일 */
+                .color-blind-mode {
+                    --cb-text-scale: 1.1;
+                    --cb-border-width: 2px;
+                }
+                
+                .color-blind-mode p, 
+                .color-blind-mode span:not(.lucide), 
+                .color-blind-mode h1, 
+                .color-blind-mode h2, 
+                .color-blind-mode h3 {
+                    letter-spacing: -0.02em;
+                    text-shadow: none !important;
+                }
+
+                .color-blind-mode button {
+                    border-width: var(--cb-border-width) !important;
+                    font-size: calc(100% * var(--cb-text-scale)) !important;
+                }
+
+                .color-blind-mode .text-sm { font-size: 0.95rem !important; }
+                .color-blind-mode .text-xs { font-size: 0.85rem !important; }
+                .color-blind-mode .text-base { font-size: 1.1rem !important; }
+                .color-blind-mode .text-lg { font-size: 1.25rem !important; }
+                .color-blind-mode .text-xl { font-size: 1.4rem !important; }
+                .color-blind-mode .text-4xl { font-size: 2.5rem !important; font-weight: 900 !important; }
             `}</style>
     </div>
   );

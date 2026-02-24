@@ -27,6 +27,7 @@ export const usePersistentSettings = () => {
     });
     const [notificationHistory, setNotificationHistory] = useState<any[]>([]);
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [isColorBlindMode, setIsColorBlindMode] = useState(false);
     const [hasSeenIntro, setHasSeenIntro] = useState(false);
     const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
@@ -53,6 +54,9 @@ export const usePersistentSettings = () => {
 
             const savedDarkMode = localStorage.getItem('isDarkMode');
             if (savedDarkMode) setIsDarkMode(JSON.parse(savedDarkMode));
+
+            const savedColorBlind = localStorage.getItem('isColorBlindMode');
+            if (savedColorBlind) setIsColorBlindMode(JSON.parse(savedColorBlind));
 
             const savedIntro = localStorage.getItem('hasSeenIntro');
             if (savedIntro) setHasSeenIntro(JSON.parse(savedIntro));
@@ -143,9 +147,10 @@ export const usePersistentSettings = () => {
             localStorage.setItem('notificationTypes', JSON.stringify(notificationTypes));
             localStorage.setItem('notificationMethod', JSON.stringify(notificationMethod));
             localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
+            localStorage.setItem('isColorBlindMode', JSON.stringify(isColorBlindMode));
             localStorage.setItem('hasSeenIntro', JSON.stringify(hasSeenIntro));
         }
-    }, [sensitivity, notifications, notificationTypes, notificationMethod, isSettingsLoaded]);
+    }, [sensitivity, notifications, notificationTypes, notificationMethod, isSettingsLoaded, isDarkMode, isColorBlindMode, hasSeenIntro]);
 
     return {
         user, setUser,
@@ -156,6 +161,7 @@ export const usePersistentSettings = () => {
         notificationMethod, setNotificationMethod,
         notificationHistory, setNotificationHistory,
         isDarkMode, setIsDarkMode,
+        isColorBlindMode, setIsColorBlindMode,
         hasSeenIntro, setHasSeenIntro,
         isSettingsLoaded
     };

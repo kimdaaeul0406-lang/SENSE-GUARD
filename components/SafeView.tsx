@@ -11,6 +11,7 @@ interface SafeViewProps {
     stream?: MediaStream | null;
     isDarkMode: boolean;
     setIsDarkMode: (val: boolean) => void;
+    isColorBlindMode: boolean;
 }
 
 export const SafeView: React.FC<SafeViewProps> = ({
@@ -20,14 +21,20 @@ export const SafeView: React.FC<SafeViewProps> = ({
     soundLevel = 0,
     stream,
     isDarkMode,
-    setIsDarkMode
+    setIsDarkMode,
+    isColorBlindMode
 }) => {
     const [isSleeping, setIsSleeping] = useState(false);
 
-    return (
-        <div className={`min-h-screen flex flex-col relative overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-slate-950' : 'bg-[#f7fdf9]'}`}>
+    const safeColor = isColorBlindMode ? '#1e40af' : '#059669'; // Blue-800 vs Emerald-600
+    const safeBg = isColorBlindMode ? '#eff6ff' : '#f7fdf9'; // Blue-50 vs Emerald-50
+    const safeAccent = isColorBlindMode ? '#2563eb' : '#10b981'; // Blue-600 vs Emerald-500
+    const safeBorder = isColorBlindMode ? 'border-blue-100' : 'border-emerald-50';
 
-            <header className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800 text-white' : 'bg-white/50 border-emerald-50 text-gray-500'} backdrop-blur-md border-b px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20`}>
+    return (
+        <div className={`min-h-screen flex flex-col relative overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-slate-950' : (isColorBlindMode ? 'bg-blue-50/30' : 'bg-[#f7fdf9]')}`}>
+
+            <header className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800 text-white' : `bg-white/50 ${safeBorder} text-gray-500`} backdrop-blur-md border-b px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20`}>
                 <button
                     onClick={() => {
                         if (window.confirm('소리 감지를 중단하고 홈으로 돌아가시겠습니까?')) {
@@ -36,19 +43,19 @@ export const SafeView: React.FC<SafeViewProps> = ({
                     }}
                     className="hover:opacity-70 transition-opacity"
                 >
-                    <h1 className={`text-lg font-bold ${isDarkMode ? 'text-emerald-400' : 'text-[#059669]'}`}>SENSE-GUARD</h1>
+                    <h1 className={`text-lg font-bold ${isDarkMode ? 'text-emerald-400' : (isColorBlindMode ? 'text-blue-700' : 'text-[#059669]')}`}>SENSE-GUARD</h1>
                 </button>
                 <div className="flex items-center gap-1">
                     <button
                         onClick={() => setIsDarkMode(!isDarkMode)}
-                        className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-yellow-400' : 'hover:bg-emerald-50 text-emerald-500'}`}
+                        className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-yellow-400' : `hover:${isColorBlindMode ? 'bg-blue-50' : 'bg-emerald-50'} ${isColorBlindMode ? 'text-blue-600' : 'text-emerald-500'}`}`}
                     >
                         {isDarkMode ? <Sun size={22} /> : <Moon size={22} />}
                     </button>
-                    <button onClick={() => setCurrentView('settings')} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-emerald-50 text-emerald-500'}`}>
+                    <button onClick={() => setCurrentView('settings')} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : `hover:${isColorBlindMode ? 'bg-blue-50' : 'bg-emerald-50'} ${isColorBlindMode ? 'text-blue-600' : 'text-emerald-500'}`}`}>
                         <Settings size={22} />
                     </button>
-                    <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-emerald-50 text-emerald-500'}`}>
+                    <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : `hover:${isColorBlindMode ? 'bg-blue-50' : 'bg-emerald-50'} ${isColorBlindMode ? 'text-blue-600' : 'text-emerald-500'}`}`}>
                         <Menu size={22} />
                     </button>
                 </div>
@@ -62,50 +69,49 @@ export const SafeView: React.FC<SafeViewProps> = ({
                             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                             className={`relative w-40 h-40 backdrop-blur-xl border rounded-full flex items-center justify-center shadow-xl transition-all duration-500 ${isDarkMode
                                 ? 'bg-slate-800/40 border-slate-700'
-                                : 'bg-white border-emerald-50/50'
+                                : `bg-white ${safeBorder}/50`
                                 }`}
                         >
-                            <ShieldCheck size={72} className={`${isDarkMode ? 'text-emerald-500/60' : 'text-[#10b981]'} relative z-20`} strokeWidth={1.5} />
-                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-[#10b981] rounded-full animate-ping z-20 opacity-40"></div>
-                            <div className="absolute bottom-3 right-3 w-3 h-3 bg-[#10b981] rounded-full z-20"></div>
+                            <ShieldCheck size={72} className={`${isDarkMode ? 'text-emerald-500/60' : (isColorBlindMode ? 'text-blue-600' : 'text-[#10b981]')} relative z-20`} strokeWidth={1.5} />
+                            <div className={`absolute bottom-3 right-3 w-3 h-3 ${isColorBlindMode ? 'bg-blue-600' : 'bg-[#10b981]'} rounded-full animate-ping z-20 opacity-40`}></div>
+                            <div className={`absolute bottom-3 right-3 w-3 h-3 ${isColorBlindMode ? 'bg-blue-600' : 'bg-[#10b981]'} rounded-full z-20`}></div>
                         </motion.div>
                     </div>
 
                     <div className="w-full max-w-[160px] mb-8 opacity-40">
-                        <WaveformVisualizer stream={stream || null} isActive={true} color={isDarkMode ? "#059669" : "#10b981"} />
+                        <WaveformVisualizer stream={stream || null} isActive={true} color={isDarkMode ? "#059669" : (isColorBlindMode ? "#2563eb" : "#10b981")} />
                     </div>
 
-                    <p className={`text-sm text-center mb-8 ${isDarkMode ? 'text-slate-400' : 'text-[#059669]'} font-bold`}>
-                        안전 감시 중<br />
-                        <span className="text-xs font-medium opacity-80 mt-1 block">주변 소리를 실시간으로 분석하고 있습니다.</span>
+                    <p className={`text-sm text-center mb-8 ${isDarkMode ? 'text-slate-400' : (isColorBlindMode ? 'text-blue-800' : 'text-[#059669]')} font-bold text-base`}>
+                        {isColorBlindMode ? '✓ 안전 상태 실시간 감시 중' : '안전 감시 중'}<br />
+                        <span className="text-xs font-medium opacity-80 mt-1 block tracking-tight">주변 소리를 실시간으로 분석하고 있습니다.</span>
                     </p>
 
                     <div className="w-full flex flex-col gap-3">
-                        {/* 1번 사진 스타일 복구 (소리 감지 중지) */}
                         <button
                             onClick={stopListening}
                             className={`w-full py-4 rounded-2xl text-base font-bold shadow-sm transition-all border-2 ${isDarkMode
                                 ? 'bg-slate-900 text-emerald-400 border-slate-700 hover:bg-slate-800'
-                                : 'bg-white text-[#059669] border-[#10b981] hover:bg-emerald-50'
+                                : `bg-white ${isColorBlindMode ? 'text-blue-700 border-blue-400 hover:bg-blue-50' : 'text-[#059669] border-[#10b981] hover:bg-emerald-50'}`
                                 }`}
                         >
                             소리 감지 중지
                         </button>
 
-                        {/* 1번 사진 스타일 복구 (수면/절전 모드) */}
                         <button
                             onClick={() => setIsSleeping(true)}
-                            className="w-full bg-[#059669] text-white py-4 rounded-2xl text-base font-bold shadow-lg hover:bg-[#047857] transition-all active:scale-95 flex items-center justify-center gap-2"
+                            className={`w-full ${isColorBlindMode ? 'bg-blue-700 hover:bg-blue-800' : 'bg-[#059669] hover:bg-[#047857]'} text-white py-4 rounded-2xl text-base font-bold shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2`}
                         >
                             <Moon size={20} />
                             수면/절전 모드 (화면 끄기)
                         </button>
 
+
                         <button
                             onClick={() => setCurrentView('ai-chat')}
                             className={`w-full py-4 rounded-2xl text-sm font-semibold shadow-sm transition-all border flex items-center justify-center gap-2 active:scale-95 mt-1 ${isDarkMode
-                                    ? 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
-                                    : 'bg-[#f8fafc] border-slate-200 text-slate-600 hover:bg-slate-100'
+                                ? 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
+                                : 'bg-[#f8fafc] border-slate-200 text-slate-600 hover:bg-slate-100'
                                 }`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

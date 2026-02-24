@@ -29,7 +29,7 @@ export const useNotifications = () => {
         }
     };
 
-    const playAlertSound = (type: 'warning' | 'danger') => {
+    const playAlertSound = (type: 'warning' | 'danger', isColorBlindMode: boolean = false) => {
         try {
             const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
             const ctx = new AudioContextClass();
@@ -39,13 +39,19 @@ export const useNotifications = () => {
             osc.connect(gain);
             gain.connect(ctx.destination);
 
-            osc.type = type === 'danger' ? 'square' : 'sine';
-            osc.frequency.setValueAtTime(type === 'danger' ? 880 : 440, ctx.currentTime);
+            // 색약 모드일 때는 더 날카롭고 명확한 주파수 사용
+            if (isColorBlindMode) {
+                osc.type = type === 'danger' ? 'square' : 'sawtooth';
+                osc.frequency.setValueAtTime(type === 'danger' ? 1000 : 500, ctx.currentTime);
+            } else {
+                osc.type = type === 'danger' ? 'square' : 'sine';
+                osc.frequency.setValueAtTime(type === 'danger' ? 880 : 440, ctx.currentTime);
+            }
 
-            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
             osc.start();
 
-            const duration = type === 'danger' ? 0.8 : 0.4;
+            const duration = type === 'danger' ? 1.0 : 0.5;
             gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration);
             osc.stop(ctx.currentTime + duration);
         } catch (e) {
@@ -53,12 +59,14 @@ export const useNotifications = () => {
         }
     };
 
-    const vibrateDevice = (isUrgent: boolean = false) => {
+    const vibrateDevice = (isUrgent: boolean = false, isColorBlindMode: boolean = false) => {
         if ('vibrate' in navigator) {
             if (isUrgent) {
-                navigator.vibrate([500, 200, 500, 200, 500]);
+                // 위험 상황: 색약 모드일 때 더 길고 강한 3단 진동
+                navigator.vibrate(isColorBlindMode ? [800, 100, 800, 100, 800] : [500, 200, 500, 200, 500]);
             } else {
-                navigator.vibrate([200, 100, 200]);
+                // 주의 상황: 색약 모드일 때 더 규칙적인 진동
+                navigator.vibrate(isColorBlindMode ? [300, 150, 300] : [200, 100, 200]);
             }
         }
     };

@@ -8,7 +8,8 @@ export const WarningView: React.FC<any> = ({
     setSidebarOpen,
     startListening,
     aiAutoResult,
-    isAutoAnalyzing
+    isAutoAnalyzing,
+    isColorBlindMode
 }) => {
     const [showDetailed, setShowDetailed] = useState(false);
     const [isLocalAnalyzing, setIsLocalAnalyzing] = useState(true);
@@ -38,12 +39,14 @@ export const WarningView: React.FC<any> = ({
     };
 
     const soundInfo = getSoundInfo();
+    const mainColor = isColorBlindMode ? "amber-600" : "amber-500";
+    const bgColor = isColorBlindMode ? "#fffbeb" : "#fffbeb"; // Keep same for now but high contrast text
 
     // 1단계: 직관적인 거대 아이콘 화면
     if (!showDetailed) {
         return (
             <div
-                className="min-h-screen bg-[#fffbeb] flex flex-col items-center justify-center p-6 relative overflow-hidden cursor-pointer"
+                className={`min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col items-center justify-center p-6 relative overflow-hidden cursor-pointer`}
                 onClick={() => !isCurrentlyAnalyzing && setShowDetailed(true)}
             >
                 <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -56,12 +59,13 @@ export const WarningView: React.FC<any> = ({
                     className="relative z-10 flex flex-col items-center text-center"
                 >
                     <div className="mb-6">
-                        <span className="bg-amber-500 text-white px-6 py-1.5 rounded-full text-sm font-black uppercase tracking-widest shadow-lg">
+                        <span className={`${isColorBlindMode ? 'bg-amber-700' : 'bg-amber-500'} text-white px-6 py-1.5 rounded-full text-sm font-black uppercase tracking-widest shadow-lg flex items-center gap-2`}>
+                            {isColorBlindMode && !isCurrentlyAnalyzing && <span>⚠</span>}
                             {isCurrentlyAnalyzing ? "ANALYZING" : "CAUTION"}
                         </span>
                     </div>
 
-                    <h1 className="text-4xl font-black text-amber-600 mb-16 tracking-tighter">
+                    <h1 className={`text-4xl font-black ${isColorBlindMode ? 'text-amber-800' : 'text-amber-600'} mb-16 tracking-tighter`}>
                         {isCurrentlyAnalyzing ? "소리 분석 중..." : soundInfo.label}
                     </h1>
 
@@ -73,18 +77,18 @@ export const WarningView: React.FC<any> = ({
                             scale: [1, 1.05, 1],
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
-                        className="w-56 h-56 bg-white/60 backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl border border-white/50 mb-16"
+                        className={`w-56 h-56 ${isColorBlindMode ? 'bg-white border-amber-200' : 'bg-white/60 border-white/50'} backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl border mb-16`}
                     >
                         {isCurrentlyAnalyzing ? (
                             <Search size={100} className="text-amber-400 animate-pulse" />
                         ) : (
-                            <div className="text-amber-500">
+                            <div className={isColorBlindMode ? "text-amber-700" : "text-amber-500"}>
                                 {soundInfo.icon}
                             </div>
                         )}
                     </motion.div>
 
-                    <p className="text-xl font-bold text-amber-900/70 mb-12 leading-tight h-14">
+                    <p className={`text-xl font-bold ${isColorBlindMode ? 'text-amber-950' : 'text-amber-900/70'} mb-12 leading-tight h-14`}>
                         {isCurrentlyAnalyzing ? "주변의 큰 소리를\n파악하고 있습니다." : aiAutoResult?.description || "주변에서 큰 소리가\n감지되었습니다."}
                     </p>
 
@@ -92,12 +96,14 @@ export const WarningView: React.FC<any> = ({
                         <motion.div
                             initial={{ y: 10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            className="bg-amber-500 text-white px-10 py-5 rounded-3xl text-xl font-black shadow-xl flex items-center gap-3"
+                            className={`${isColorBlindMode ? 'bg-amber-700' : 'bg-amber-500'} text-white px-10 py-5 rounded-3xl text-xl font-black shadow-xl flex items-center gap-3`}
                         >
                             터치하여 확인하기 <ArrowRight size={24} />
                         </motion.div>
                     )}
                 </motion.div>
+// ... (omitted bottom part of Phase 1) ...
+
 
                 {isCurrentlyAnalyzing && (
                     <div className="absolute bottom-20 flex flex-col items-center gap-3">
@@ -120,21 +126,21 @@ export const WarningView: React.FC<any> = ({
     let displaySoundType = aiAutoResult?.description.split(' ')[0] || "⚠️ 주의 필요 소음";
 
     return (
-        <div className="min-h-screen bg-[#fffbeb] flex flex-col relative overflow-hidden transition-colors duration-500">
+        <div className={`min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col relative overflow-hidden transition-colors duration-500`}>
             <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <AuroraBackground isActive={false} color="amber" />
             </div>
 
-            <header className="bg-white/50 backdrop-blur-md border-b border-amber-100 px-4 py-4 pt-safe flex items-center justify-between shadow-sm z-20">
+            <header className={`bg-white/50 backdrop-blur-md border-b ${isColorBlindMode ? 'border-amber-300' : 'border-amber-100'} px-4 py-4 pt-safe flex items-center justify-between shadow-sm z-20`}>
                 <button
                     onClick={() => setShowDetailed(false)}
-                    className="p-2 hover:bg-amber-50 rounded-lg text-amber-600"
+                    className={`p-2 hover:bg-amber-50 rounded-lg ${isColorBlindMode ? 'text-amber-800' : 'text-amber-600'}`}
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className="text-lg font-bold text-amber-600/60 font-medium">상세 정보</h1>
+                <h1 className={`text-lg font-bold ${isColorBlindMode ? 'text-amber-900' : 'text-amber-600/60'} font-medium`}>상세 정보</h1>
                 <div className="flex gap-2">
-                    <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-amber-50 rounded-lg transition-colors text-amber-400">
+                    <button onClick={() => setSidebarOpen(true)} className={`p-2 hover:bg-amber-50 rounded-lg transition-colors ${isColorBlindMode ? 'text-amber-700' : 'text-amber-400'}`}>
                         <Shield size={20} />
                     </button>
                 </div>
@@ -146,29 +152,29 @@ export const WarningView: React.FC<any> = ({
                     animate={{ y: 0, opacity: 1 }}
                     className="w-full max-w-md flex flex-col items-center"
                 >
-                    <div className="w-full bg-white/70 backdrop-blur-sm rounded-3xl p-6 shadow-md border border-amber-50 mb-6">
+                    <div className={`w-full bg-white/70 backdrop-blur-sm rounded-3xl p-6 shadow-md border ${isColorBlindMode ? 'border-amber-200' : 'border-amber-50'} mb-6`}>
                         <div className="flex items-center gap-2 mb-4">
-                            <Search size={16} className="text-amber-400" />
-                            <h3 className="font-bold text-amber-800/70 text-sm">AI 정밀 분석 결과</h3>
+                            <Search size={16} className={isColorBlindMode ? "text-amber-700" : "text-amber-400"} />
+                            <h3 className={`font-bold ${isColorBlindMode ? "text-amber-900" : "text-amber-800/70"} text-sm`}>AI 정밀 분석 결과</h3>
                         </div>
 
                         <div className="space-y-3">
-                            <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100/30 text-center">
-                                <p className="text-[10px] text-amber-600/50 mb-1 font-bold uppercase tracking-wider">감지된 소리</p>
-                                <p className="text-xl font-bold text-amber-900/60">{displaySoundType}</p>
+                            <div className={`p-4 ${isColorBlindMode ? 'bg-amber-100 border-amber-300' : 'bg-amber-50/50 border-amber-100/30'} rounded-2xl border text-center`}>
+                                <p className={`text-[10px] ${isColorBlindMode ? 'text-amber-800' : 'text-amber-600/50'} mb-1 font-bold uppercase tracking-wider`}>감지된 소리</p>
+                                <p className={`text-xl font-bold ${isColorBlindMode ? 'text-amber-950' : 'text-amber-900/60'}`}>{isColorBlindMode && "⚠ "}{displaySoundType}</p>
                             </div>
 
                             <div className="p-4 bg-white/50 rounded-2xl border border-amber-50/50">
-                                <p className="text-[10px] text-amber-500/60 font-bold mb-1">상태 보고</p>
-                                <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                                <p className={`text-[10px] ${isColorBlindMode ? 'text-amber-700' : 'text-amber-500/60'} font-bold mb-1`}>상태 보고</p>
+                                <p className={`text-sm ${isColorBlindMode ? 'text-black' : 'text-gray-600'} leading-relaxed font-medium`}>
                                     {displayAnalysis}
                                 </p>
                             </div>
 
                             {aiAutoResult?.action && (
-                                <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/30">
-                                    <p className="text-[10px] text-blue-500/60 font-bold mb-1">권장 행동</p>
-                                    <p className="text-sm text-blue-900/70 font-bold uppercase">
+                                <div className={`p-4 ${isColorBlindMode ? 'bg-blue-100 border-blue-300' : 'bg-blue-50/50 border-blue-100/30'} rounded-2xl border`}>
+                                    <p className={`text-[10px] ${isColorBlindMode ? 'text-blue-800' : 'text-blue-500/60'} font-bold mb-1`}>권장 행동</p>
+                                    <p className={`text-sm ${isColorBlindMode ? 'text-blue-950 font-black' : 'text-blue-900/70 font-bold'} uppercase`}>
                                         {aiAutoResult.action}
                                     </p>
                                 </div>
@@ -179,7 +185,7 @@ export const WarningView: React.FC<any> = ({
                     <div className="w-full space-y-3 max-w-[320px]">
                         <button
                             onClick={startListening}
-                            className="w-full bg-amber-400/80 text-white py-4 rounded-2xl text-base font-bold shadow-md hover:bg-amber-500/80 transition-all flex items-center justify-center gap-2"
+                            className={`w-full ${isColorBlindMode ? 'bg-amber-700' : 'bg-amber-400/80'} text-white py-4 rounded-2xl text-base font-bold shadow-md hover:opacity-90 transition-all flex items-center justify-center gap-2`}
                         >
                             안전 확인 완료
                         </button>
@@ -195,7 +201,7 @@ export const WarningView: React.FC<any> = ({
 
                     <button
                         onClick={() => setCurrentView('manual')}
-                        className="mt-8 text-amber-700/40 text-xs font-bold hover:underline"
+                        className={`mt-8 ${isColorBlindMode ? 'text-amber-900' : 'text-amber-700/40'} text-xs font-bold hover:underline`}
                     >
                         행동 매뉴얼 보기 <ArrowRight size={14} className="inline ml-1" />
                     </button>

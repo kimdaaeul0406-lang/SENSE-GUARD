@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, User, Trash2 } from 'lucide-react';
+import { Menu, User, Trash2, ArrowLeft } from 'lucide-react';
 
 interface NotificationTypes {
     fire: boolean;
@@ -32,6 +32,8 @@ interface SettingsViewProps {
     setSensitivity: (val: number) => void;
     guardianPhone: string;
     setGuardianPhone: (phone: string) => void;
+    isColorBlindMode: boolean;
+    setIsColorBlindMode: (enabled: boolean) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -51,13 +53,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setSensitivity = () => { },
     guardianPhone = '',
     setGuardianPhone = () => { },
+    isColorBlindMode = false,
+    setIsColorBlindMode = () => { },
 }) => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col">
-            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm">
-                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">설정</h1>
+            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm sticky top-0 z-20">
+                <h1
+                    onClick={() => setCurrentView(isListening ? 'safe' : 'main')}
+                    className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent cursor-pointer ml-[1.5px]"
+                >
+                    설정
+                </h1>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => setCurrentView(isListening ? 'safe' : 'main')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <button
+                        onClick={() => setCurrentView('mypage')}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        title="마이페이지"
+                    >
                         <User size={24} className="text-blue-600" />
                     </button>
                     <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -102,6 +115,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-4">접근성 및 테마 설정</h3>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <span className="text-sm text-gray-600 block transition-colors">색약 보정 모드 (고대비)</span>
+                            <p className="text-[10px] text-gray-400">색상 구분이 어려운 분들을 위한 모드</p>
+                        </div>
+                        <button
+                            onClick={() => setIsColorBlindMode(!isColorBlindMode)}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${isColorBlindMode ? 'bg-blue-600' : 'bg-gray-300'}`}
+                        >
+                            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${isColorBlindMode ? 'right-0.5' : 'left-0.5'}`} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-800 mb-4">알림 설정</h3>
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-sm text-gray-600">알림 전송 여부</span>
@@ -137,19 +166,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setNotificationMethod({ ...notificationMethod, screen: !notificationMethod.screen })}
-                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.screen ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.screen ? (isColorBlindMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white shadow-md') : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                             >
                                 화면표시
                             </button>
                             <button
                                 onClick={() => setNotificationMethod({ ...notificationMethod, sound: !notificationMethod.sound })}
-                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.sound ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.sound ? (isColorBlindMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white shadow-md') : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                             >
                                 소리
                             </button>
                             <button
                                 onClick={() => setNotificationMethod({ ...notificationMethod, vibration: !notificationMethod.vibration })}
-                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.vibration ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${notificationMethod.vibration ? (isColorBlindMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white shadow-md') : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                             >
                                 진동
                             </button>
