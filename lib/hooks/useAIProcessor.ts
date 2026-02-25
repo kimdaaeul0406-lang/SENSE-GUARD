@@ -65,7 +65,8 @@ export const useAIProcessor = () => {
         console.log("Starting Auto AI Analysis...");
 
         try {
-            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+            const mediaRecorder = new MediaRecorder(stream, { mimeType });
             const chunks: Blob[] = [];
 
             mediaRecorder.ondataavailable = (e) => {
@@ -73,7 +74,7 @@ export const useAIProcessor = () => {
             };
 
             mediaRecorder.onstop = async () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
+                const blob = new Blob(chunks, { type: mimeType });
                 const formData = new FormData();
                 formData.append('audio', blob);
                 formData.append('state', 'checking');
@@ -114,7 +115,12 @@ export const useAIProcessor = () => {
             };
 
             mediaRecorder.start();
-            setTimeout(() => mediaRecorder.stop(), 3000);
+            // 4초로 녹음 시간 증가 (패턴 파악을 위해)
+            setTimeout(() => {
+                if (mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+            }, 4000);
         } catch (e) {
             console.error("Auto Recorder Error", e);
             setIsAutoAnalyzing(false);

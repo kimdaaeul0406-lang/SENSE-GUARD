@@ -102,7 +102,7 @@ export const WarningView: React.FC<any> = ({
                         </motion.div>
                     )}
                 </motion.div>
-// ... (omitted bottom part of Phase 1) ...
+
 
 
                 {isCurrentlyAnalyzing && (

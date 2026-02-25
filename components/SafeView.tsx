@@ -65,9 +65,12 @@ export const SafeView: React.FC<SafeViewProps> = ({
                 <div className="w-full max-w-md mx-auto flex flex-col items-center mt-4">
                     <div className="relative w-64 h-64 mb-4 flex items-center justify-center">
                         <motion.div
-                            animate={{ scale: [1, 1.05, 1] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                            className={`relative w-40 h-40 backdrop-blur-xl border rounded-full flex items-center justify-center shadow-xl transition-all duration-500 ${isDarkMode
+                            animate={{
+                                scale: 1 + (soundLevel / 500),
+                                boxShadow: `0 0 ${soundLevel / 2}px ${isColorBlindMode ? 'rgba(37, 99, 235, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
+                            }}
+                            transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                            className={`relative w-40 h-40 backdrop-blur-xl border rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${isDarkMode
                                 ? 'bg-slate-800/40 border-slate-700'
                                 : `bg-white ${safeBorder}/50`
                                 }`}

@@ -70,10 +70,10 @@ Return the response strictly in the following JSON format (no markdown, no code 
 - TV/video audio at normal volume
 
 === CRITICAL RULES (MUST FOLLOW) ===
-1. **SIREN vs MUSIC**: If you hear a siren-like sound (Ambulance, Fire, Police), it is DANGER even if it sounds "clean" or "musical" to some ears. These specific patterns (Hi-Lo, Wail, Yelp) take priority.
-2. **False Alarms vs Safety**: While false alarms should be minimized, prioritize user safety. If you are 75%+ confident it is an emergency, mark it accordingly.
-3. If it is definitely a Car Horn (honk honk), it is SAFE. But if it is any Emergency Vehicle Siren, it is DANGER.
-4. Any sound with clear lyrics or harmony is likely media (SAFE).
+1. **SIREN vs MUSIC**: If you hear a siren-like sound (Ambulance, Fire, Police), it is DANGER even if it sounds "clean", "musical", or is part of a background song/media. The siren pattern (up-down wail or hi-lo) is the #1 priority.
+2. **False Alarms vs Safety**: While false alarms should be minimized, prioritize user safety. If you are 70%+ confident it is a life-safety emergency, mark it DANGER.
+3. If it is definitely a Car Horn (short honks), it is SAFE. But if it is any sustained Emergency Vehicle Siren, it is DANGER.
+4. Background media (YouTube, TV) that contains an emergency siren should be treated as DANGER for testing and safety purposes.
 5. If the sound is too muffled to identify but clearly very loud and rhythmic (like an alarm), default to WARNING.
 `;
 

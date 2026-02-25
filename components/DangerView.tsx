@@ -125,7 +125,7 @@ export const DangerView: React.FC<any> = ({
             </div>
         );
     }
-    // ... (omitted bottom part of Phase 1) ...
+
 
 
     // 2단계: 상세 대처 화면
