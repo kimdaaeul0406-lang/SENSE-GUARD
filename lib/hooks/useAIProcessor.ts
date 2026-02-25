@@ -115,12 +115,12 @@ export const useAIProcessor = () => {
             };
 
             mediaRecorder.start();
-            // 4초로 녹음 시간 증가 (패턴 파악을 위해)
+            // 5초로 녹음 시간 증가 (패턴 파악을 위해)
             setTimeout(() => {
                 if (mediaRecorder.state === 'recording') {
                     mediaRecorder.stop();
                 }
-            }, 4000);
+            }, 5000);
         } catch (e) {
             console.error("Auto Recorder Error", e);
             setIsAutoAnalyzing(false);

@@ -70,11 +70,11 @@ Return the response strictly in the following JSON format (no markdown, no code 
 - TV/video audio at normal volume
 
 === CRITICAL RULES (MUST FOLLOW) ===
-1. **SIREN vs MUSIC**: If you hear a siren-like sound (Ambulance, Fire, Police), it is DANGER even if it sounds "clean", "musical", or is part of a background song/media. The siren pattern (up-down wail or hi-lo) is the #1 priority.
-2. **False Alarms vs Safety**: While false alarms should be minimized, prioritize user safety. If you are 70%+ confident it is a life-safety emergency, mark it DANGER.
-3. If it is definitely a Car Horn (short honks), it is SAFE. But if it is any sustained Emergency Vehicle Siren, it is DANGER.
-4. Background media (YouTube, TV) that contains an emergency siren should be treated as DANGER for testing and safety purposes.
-5. If the sound is too muffled to identify but clearly very loud and rhythmic (like an alarm), default to WARNING.
+1. **SIREN vs MUSIC**: If you hear any emergency siren pattern (Hi-Lo, Wail, Yelp), it is **DANGER** regardless of the source. Even if it is playing from a phone, YouTube, TV, or has background music/lyrics, if there is a siren, it is DANGER.
+2. **PRIORITIZE SAFETY**: If you are at least 60% confident it's an emergency sound (Siren, Alarm, Scream), you MUST classify it as DANGER. We prefer false alarms over missing a life-threatening situation.
+3. **YOUTUBE/TESTING**: Many users test this app with YouTube videos. DO NOT ignore sirens just because they sound like a recording or have digital artifacts or background noise.
+4. **HORN vs SIREN**: Short "honk" sounds are SAFE. Repeating fire alarms or sustained wailing sirens are DANGER.
+5. If the sound is muffled but rhythmic/alarm-like, default to WARNING or DANGER.
 `;
 
         // Gemini REST API 호출
