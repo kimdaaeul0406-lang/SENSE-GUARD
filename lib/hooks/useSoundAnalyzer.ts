@@ -5,8 +5,8 @@ interface UseSoundAnalyzerProps {
     isAnalyzing: boolean;
     isAutoAnalyzing: boolean;
     currentView: string;
-    onStatusChange: (newView: string) => void;
-    onThresholdExceeded: () => void;
+    onStatusChange: (status: string) => void;
+    onThresholdExceeded: (sirenScore: number) => void;
 }
 
 export const useSoundAnalyzer = ({
@@ -19,25 +19,28 @@ export const useSoundAnalyzer = ({
 }: UseSoundAnalyzerProps) => {
     const [isListening, setIsListening] = useState(false);
     const [soundLevel, setSoundLevel] = useState(0);
-    const [micPermission, setMicPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
+    const [sirenScore, setSirenScore] = useState(0);
+    const [micPermission, setMicPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
+    const [micStream, setMicStream] = useState<MediaStream | null>(null);
 
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
-    const micStreamRef = useRef<MediaStream | null>(null);
+    const dataArrayRef = useRef<Uint8Array | null>(null);
+    const lastLoudTimeRef = useRef<number>(0);
     const animationFrameRef = useRef<number | null>(null);
-    const lastVisualUpdateTimeRef = useRef(0);
-    const lastLoudTimeRef = useRef(0);
-    const currentViewRef = useRef(currentView);
     const sensitivityRef = useRef(sensitivity);
+    const currentViewRef = useRef(currentView);
 
-    // Sync refs
-    useEffect(() => {
-        currentViewRef.current = currentView;
-    }, [currentView]);
+    // 사이렌 탐지를 위한 히스토리 (주기성 분석용)
+    const pitchHistoryRef = useRef<number[]>([]);
 
     useEffect(() => {
         sensitivityRef.current = sensitivity;
     }, [sensitivity]);
+
+    useEffect(() => {
+        currentViewRef.current = currentView;
+    }, [currentView]);
 
     const requestMicPermission = async () => {
         try {
@@ -50,112 +53,145 @@ export const useSoundAnalyzer = ({
             });
             setMicPermission('granted');
             return stream;
-        } catch {
+        } catch (e) {
+            console.error("Mic permission error:", e);
             setMicPermission('denied');
             return null;
         }
     };
 
     const startListening = async () => {
-        const stream = await requestMicPermission();
-        if (!stream) {
-            alert("마이크 권한이 필요합니다. 브라우저 설정에서 마이크 권한을 허용해주세요.");
-            return;
+        if (isListening) return;
+
+        let currentStream = micStream;
+        if (!currentStream) {
+            currentStream = await requestMicPermission();
+            if (!currentStream) return;
+            setMicStream(currentStream);
         }
 
-        micStreamRef.current = stream;
         const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
-        audioContextRef.current = new AudioContextClass();
+        const audioContext = new AudioContextClass();
+        const source = audioContext.createMediaStreamSource(currentStream);
+        const analyser = audioContext.createAnalyser();
 
-        if (!audioContextRef.current) return;
+        analyser.fftSize = 2048;
+        source.connect(analyser);
 
-        analyserRef.current = audioContextRef.current.createAnalyser();
-        const source = audioContextRef.current.createMediaStreamSource(stream);
-        analyserRef.current.fftSize = 256;
-        source.connect(analyserRef.current);
+        audioContextRef.current = audioContext;
+        analyserRef.current = analyser;
+        dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
 
         setIsListening(true);
-        onStatusChange('safe');
-        analyzeSoundLevel();
+        analyzeSound();
     };
 
     const stopListening = () => {
-        console.log("--- STOPPING SOUND ANALYSIS ---");
-        if (micStreamRef.current) {
-            micStreamRef.current.getTracks().forEach(track => {
-                track.stop();
-                console.log("Track stopped:", track.label);
-            });
-            micStreamRef.current = null;
-        }
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
-            animationFrameRef.current = null;
         }
         if (audioContextRef.current) {
-            audioContextRef.current.close().then(() => {
-                console.log("AudioContext closed successfully");
-            });
-            audioContextRef.current = null;
+            audioContextRef.current.close();
         }
-        analyserRef.current = null;
+        if (micStream) {
+            micStream.getTracks().forEach(track => track.stop());
+            setMicStream(null);
+        }
         setIsListening(false);
         setSoundLevel(0);
-        onStatusChange('main');
+        setSirenScore(0);
     };
 
-    const analyzeSoundLevel = () => {
-        if (!analyserRef.current) return;
-
-        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-        analyserRef.current.getByteFrequencyData(dataArray);
-
-        const sum = dataArray.reduce((acc, val) => acc + val * val, 0);
-        const rms = Math.sqrt(sum / dataArray.length);
-
-        const baseThreshold = 165 - sensitivityRef.current;
-        const normalizedLevel = Math.min(100, (rms / baseThreshold) * 100);
-
-        const now = Date.now();
-        if (now - lastVisualUpdateTimeRef.current > 100) {
-            setSoundLevel(normalizedLevel);
-            lastVisualUpdateTimeRef.current = now;
+    const analyzeSound = () => {
+        if (!analyserRef.current || !dataArrayRef.current) {
+            animationFrameRef.current = requestAnimationFrame(analyzeSound);
+            return;
         }
 
-        if (!isAnalyzing) {
-            if (normalizedLevel > 65) {
-                const nowLoud = Date.now();
-                // 2초 쿨다운 추가 및 중복 호출 방지
-                if (currentViewRef.current !== 'danger' && currentViewRef.current !== 'warning' && (nowLoud - lastLoudTimeRef.current > 2000)) {
-                    onThresholdExceeded();
-                    lastLoudTimeRef.current = nowLoud;
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current as any);
+
+        // 1. 단순 볼륨 (RMS)
+        let sum = 0;
+        for (let i = 0; i < dataArrayRef.current.length; i++) {
+            sum += dataArrayRef.current[i] * dataArrayRef.current[i];
+        }
+        const rms = Math.sqrt(sum / dataArrayRef.current.length);
+        const normalizedLevel = Math.min(100, (rms / 128) * 100);
+        setSoundLevel(normalizedLevel);
+
+        // 2. 사이렌 스코어링 (Siren Detection)
+        const sampleRate = audioContextRef.current?.sampleRate || 44100;
+        const binSize = sampleRate / analyserRef.current.fftSize;
+        const startBin = Math.floor(600 / binSize);
+        const endBin = Math.floor(1600 / binSize);
+
+        let sirenBandEnergy = 0;
+        let peakEnergy = 0;
+        let peakBin = 0;
+
+        for (let i = startBin; i < endBin; i++) {
+            const energy = dataArrayRef.current![i];
+            sirenBandEnergy += energy;
+            if (energy > peakEnergy) {
+                peakEnergy = energy;
+                peakBin = i;
+            }
+        }
+
+        // 도미넌트 주파수(피치) 추적하여 흔들림(Modulation) 감지
+        const currentPitch = peakBin * binSize;
+        if (peakEnergy > 50) {
+            pitchHistoryRef.current.push(currentPitch);
+            if (pitchHistoryRef.current.length > 50) pitchHistoryRef.current.shift();
+        }
+
+        // 피치가 주기적으로 변하는지 간단한 분산 계산
+        let pitchVariance = 0;
+        if (pitchHistoryRef.current.length > 20) {
+            const avg = pitchHistoryRef.current.reduce((a, b) => a + b) / pitchHistoryRef.current.length;
+            const variance = pitchHistoryRef.current.map(x => Math.pow(x - avg, 2)).reduce((a, b) => a + b) / pitchHistoryRef.current.length;
+            pitchVariance = Math.sqrt(variance);
+        }
+
+        const score = Math.min(100, (sirenBandEnergy / (endBin - startBin) / 2) + (pitchVariance / 10));
+        setSirenScore(score);
+
+        if (!isAutoAnalyzing) {
+            const now = Date.now();
+            const volumeThreshold = 165 - sensitivityRef.current;
+            const sirenThreshold = 70;
+
+            if ((normalizedLevel > volumeThreshold || score > sirenThreshold) && (now - lastLoudTimeRef.current > 3000)) {
+                if (currentViewRef.current === 'safe') {
+                    onThresholdExceeded(score);
+                    lastLoudTimeRef.current = now;
                 }
             }
 
-            // Auto reset logic
-            if (currentViewRef.current === 'warning') {
-                if (Date.now() - lastLoudTimeRef.current > 10000 && !isAutoAnalyzing) {
+            if (currentViewRef.current === 'warning' && !isAutoAnalyzing) {
+                if (now - lastLoudTimeRef.current > 10000 && normalizedLevel < 30) {
                     onStatusChange('safe');
                 }
             }
         }
 
-        animationFrameRef.current = requestAnimationFrame(analyzeSoundLevel);
+        animationFrameRef.current = requestAnimationFrame(analyzeSound);
     };
 
     useEffect(() => {
         return () => {
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-            if (audioContextRef.current) audioContextRef.current.close();
+            if (audioContextRef.current) audioContextRef.current.close().catch(() => { });
         };
     }, []);
 
     return {
         isListening,
         soundLevel,
+        sirenScore,
         micPermission,
         startListening,
         stopListening,
-        micStream: micStreamRef.current
+        micStream
     };
 };

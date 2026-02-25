@@ -100,6 +100,7 @@ export default function Home() {
   const {
     isListening,
     soundLevel,
+    sirenScore,
     micPermission,
     startListening,
     stopListening,
@@ -110,20 +111,17 @@ export default function Home() {
     isAutoAnalyzing,
     currentView,
     onStatusChange: (newView) => setCurrentView(newView),
-    onThresholdExceeded: () => {
+    onThresholdExceeded: (score) => {
       if (isAutoAnalyzing) return;
 
-      // 모바일(아이폰 등) 호환성: 즉시 화면을 전환하여 마이크 스트림 연결을 유지함
+      console.log(`Siren score ${score.toFixed(1)} detected! Moving to analysis...`);
       updateViewWithHysteresis('warning');
 
       if (micStream) {
         performAutoAnalysis(micStream, (result) => {
-          console.log("AI Analysis Completion. Result:", result.riskLevel);
-
           if (result.riskLevel === 'DANGER') {
             updateViewWithHysteresis('danger');
           } else if (result.riskLevel === 'SAFE') {
-            // AI가 일상 소음(SAFE)이라고 판단하면 3초 뒤 다시 안전 화면으로 복귀
             setTimeout(() => {
               setCurrentView(prev => prev === 'warning' ? 'safe' : prev);
             }, 3000);
@@ -132,6 +130,15 @@ export default function Home() {
       }
     }
   });
+
+  // 디버그 모드 체크
+  const [isDebug, setIsDebug] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setIsDebug(params.get('debug') === '1');
+    }
+  }, []);
 
   const handleConfirm = () => {
     setCurrentView('safe');
@@ -193,173 +200,200 @@ export default function Home() {
   if (!isSettingsLoaded) return null;
 
   return (
-    <div className={`font-sans antialiased text-black ${isColorBlindMode ? 'color-blind-mode' : ''}`} suppressHydrationWarning>
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        setCurrentView={setCurrentView}
-        user={user}
-        onLogout={handleLogout}
-        isListening={isListening}
-      />
+    <main className={`min-h-screen relative overflow-hidden bg-slate-50 ${isColorBlindMode ? 'color-blind-mode' : ''}`} suppressHydrationWarning>
+      <div className="max-w-md mx-auto h-screen relative flex flex-col">
+        {/* 디버그 오버레이 */}
+        {isDebug && (
+          <div className="fixed bottom-24 left-4 right-4 z-[9999] bg-black/80 text-white p-3 rounded-xl text-[10px] font-mono backdrop-blur-md border border-white/20">
+            <div className="flex justify-between mb-1">
+              <span>VIEW: <span className="text-yellow-400 font-bold uppercase">{currentView}</span></span>
+              <span>MIC: {isListening ? 'ON' : 'OFF'}</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-16">VOLUME:</span>
+                <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-400" style={{ width: `${soundLevel}%` }}></div>
+                </div>
+                <span className="w-6 text-right">{soundLevel.toFixed(0)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-16">SIREN:</span>
+                <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-rose-400" style={{ width: `${sirenScore}%` }}></div>
+                </div>
+                <span className="w-6 text-right">{sirenScore.toFixed(0)}</span>
+              </div>
+            </div>
+            {isAutoAnalyzing && <div className="mt-2 text-center text-cyan-400 animate-pulse">● AI ANALYSIS IN PROGRESS...</div>}
+          </div>
+        )}
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          setCurrentView={setCurrentView}
+          user={user}
+          onLogout={handleLogout}
+          isListening={isListening}
+        />
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentView}
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.02 }}
-          transition={{ duration: 0.25, ease: "easeInOut" }}
-          className="min-h-screen"
-        >
-          {currentView === 'intro' && (
-            <IntroView
-              hasSeenIntro={hasSeenIntro}
-              onComplete={(isGuest) => {
-                setHasSeenIntro(true);
-                if (isGuest) {
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentView}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="min-h-screen"
+          >
+            {currentView === 'intro' && (
+              <IntroView
+                hasSeenIntro={hasSeenIntro}
+                onComplete={(isGuest) => {
+                  setHasSeenIntro(true);
+                  if (isGuest) {
+                    setCurrentView('main');
+                  } else if (user) {
+                    setCurrentView('main');
+                  } else {
+                    setCurrentView('auth');
+                  }
+                }}
+              />
+            )}
+
+            {currentView === 'guardian-setup' && (
+              <GuardianSetupView
+                userName={user?.name || ""}
+                onComplete={(phone) => {
+                  if (phone) setGuardianPhone(phone);
                   setCurrentView('main');
-                } else if (user) {
-                  setCurrentView('main');
-                } else {
-                  setCurrentView('auth');
-                }
-              }}
-            />
-          )}
+                }}
+              />
+            )}
 
-          {currentView === 'guardian-setup' && (
-            <GuardianSetupView
-              userName={user?.name || ""}
-              onComplete={(phone) => {
-                if (phone) setGuardianPhone(phone);
-                setCurrentView('main');
-              }}
-            />
-          )}
+            {currentView === 'main' && (
+              <MainView
+                setCurrentView={setCurrentView}
+                setSidebarOpen={setSidebarOpen}
+                startListening={startListening}
+              />
+            )}
+            {currentView === 'safe' && (
+              <SafeView
+                setCurrentView={setCurrentView}
+                setSidebarOpen={setSidebarOpen}
+                stopListening={stopListening}
+                soundLevel={soundLevel}
+                stream={micStream}
+                isDarkMode={isDarkMode}
+                setIsDarkMode={setIsDarkMode}
+                isColorBlindMode={isColorBlindMode}
+                isAutoAnalyzing={isAutoAnalyzing}
+              />
+            )}
+            {currentView === 'warning' && (
+              <WarningView
+                setCurrentView={setCurrentView}
+                setSidebarOpen={setSidebarOpen}
+                stopListening={stopListening}
+                startListening={handleConfirm}
+                onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
+                aiAutoResult={aiAnalysisResult}
+                isAutoAnalyzing={isAutoAnalyzing}
+                isColorBlindMode={isColorBlindMode}
+              />
+            )}
+            {currentView === 'danger' && (
+              <DangerView
+                setCurrentView={setCurrentView}
+                setSidebarOpen={setSidebarOpen}
+                stopListening={stopListening}
+                startListening={handleConfirm}
+                onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
+                aiAutoResult={aiAnalysisResult}
+                isAutoAnalyzing={isAutoAnalyzing}
+                guardianPhone={guardianPhone}
+                isColorBlindMode={isColorBlindMode}
+              />
+            )}
+            {currentView === 'settings' && (
+              <SettingsView
+                setCurrentView={setCurrentView}
+                setSidebarOpen={setSidebarOpen}
+                isListening={isListening}
+                micPermission={micPermission}
+                notifications={notifications}
+                setNotifications={setNotifications}
+                notificationTypes={notificationTypes}
+                setNotificationTypes={setNotificationTypes}
+                notificationMethod={notificationMethod}
+                setNotificationMethod={setNotificationMethod}
+                notificationHistory={notificationHistory}
+                onDeleteNotification={(id) => setNotificationHistory(prev => prev.filter(item => item.id !== id))}
+                sensitivity={sensitivity}
+                setSensitivity={setSensitivity}
+                guardianPhone={guardianPhone}
+                setGuardianPhone={setGuardianPhone}
+                isColorBlindMode={isColorBlindMode}
+                setIsColorBlindMode={setIsColorBlindMode}
+              />
+            )}
+            {currentView === 'auth' && (
+              <AuthView
+                setCurrentView={setCurrentView}
+                onLoginSuccess={(userData) => {
+                  setUser(userData);
+                  localStorage.setItem('user', JSON.stringify(userData));
+                  // 로그인 성공 시 보호자 번호가 없으면 설정 화면으로, 있으면 메인으로
+                  if (!guardianPhone) {
+                    setCurrentView('guardian-setup');
+                  } else {
+                    setCurrentView('main');
+                  }
+                }}
+              />
+            )}
+            {currentView === 'shelter' && (
+              <ShelterView
+                setCurrentView={setCurrentView}
+                setSidebarOpen={setSidebarOpen}
+                onBack={handleBackFromSubView}
+              />
+            )}
+            {['intro', 'terms', 'help', 'how-it-works'].includes(currentView) && (
+              <InfoView
+                setCurrentView={setCurrentView}
+                type={currentView as any}
+                onBack={handleBackFromSubView}
+              />
+            )}
+            {currentView === 'manual' && (
+              <ManualView
+                setCurrentView={setCurrentView}
+                onBack={handleBackFromSubView}
+                isColorBlindMode={isColorBlindMode}
+              />
+            )}
+            {currentView === 'mypage' && (
+              <MyPageViewReloaded
+                key="mypage-v2"
+                setCurrentView={setCurrentView}
+                user={user}
+                onLogout={handleLogout}
+                onBack={handleBackFromSubView}
+              />
+            )}
+            {currentView === 'ai-chat' && (
+              <AIChatView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
+            )}
+            {currentView === 'disaster-info' && (
+              <DisasterInfoView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
+            )}
+          </motion.div>
+        </AnimatePresence>
 
-          {currentView === 'main' && (
-            <MainView
-              setCurrentView={setCurrentView}
-              setSidebarOpen={setSidebarOpen}
-              startListening={startListening}
-            />
-          )}
-          {currentView === 'safe' && (
-            <SafeView
-              setCurrentView={setCurrentView}
-              setSidebarOpen={setSidebarOpen}
-              stopListening={stopListening}
-              soundLevel={soundLevel}
-              stream={micStream}
-              isDarkMode={isDarkMode}
-              setIsDarkMode={setIsDarkMode}
-              isColorBlindMode={isColorBlindMode}
-              isAutoAnalyzing={isAutoAnalyzing}
-            />
-          )}
-          {currentView === 'warning' && (
-            <WarningView
-              setCurrentView={setCurrentView}
-              setSidebarOpen={setSidebarOpen}
-              stopListening={stopListening}
-              startListening={handleConfirm}
-              onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
-              aiAutoResult={aiAnalysisResult}
-              isAutoAnalyzing={isAutoAnalyzing}
-              isColorBlindMode={isColorBlindMode}
-            />
-          )}
-          {currentView === 'danger' && (
-            <DangerView
-              setCurrentView={setCurrentView}
-              setSidebarOpen={setSidebarOpen}
-              stopListening={stopListening}
-              startListening={handleConfirm}
-              onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
-              aiAutoResult={aiAnalysisResult}
-              isAutoAnalyzing={isAutoAnalyzing}
-              guardianPhone={guardianPhone}
-              isColorBlindMode={isColorBlindMode}
-            />
-          )}
-          {currentView === 'settings' && (
-            <SettingsView
-              setCurrentView={setCurrentView}
-              setSidebarOpen={setSidebarOpen}
-              isListening={isListening}
-              micPermission={micPermission}
-              notifications={notifications}
-              setNotifications={setNotifications}
-              notificationTypes={notificationTypes}
-              setNotificationTypes={setNotificationTypes}
-              notificationMethod={notificationMethod}
-              setNotificationMethod={setNotificationMethod}
-              notificationHistory={notificationHistory}
-              onDeleteNotification={(id) => setNotificationHistory(prev => prev.filter(item => item.id !== id))}
-              sensitivity={sensitivity}
-              setSensitivity={setSensitivity}
-              guardianPhone={guardianPhone}
-              setGuardianPhone={setGuardianPhone}
-              isColorBlindMode={isColorBlindMode}
-              setIsColorBlindMode={setIsColorBlindMode}
-            />
-          )}
-          {currentView === 'auth' && (
-            <AuthView
-              setCurrentView={setCurrentView}
-              onLoginSuccess={(userData) => {
-                setUser(userData);
-                localStorage.setItem('user', JSON.stringify(userData));
-                // 로그인 성공 시 보호자 번호가 없으면 설정 화면으로, 있으면 메인으로
-                if (!guardianPhone) {
-                  setCurrentView('guardian-setup');
-                } else {
-                  setCurrentView('main');
-                }
-              }}
-            />
-          )}
-          {currentView === 'shelter' && (
-            <ShelterView
-              setCurrentView={setCurrentView}
-              setSidebarOpen={setSidebarOpen}
-              onBack={handleBackFromSubView}
-            />
-          )}
-          {['intro', 'terms', 'help', 'how-it-works'].includes(currentView) && (
-            <InfoView
-              setCurrentView={setCurrentView}
-              type={currentView as any}
-              onBack={handleBackFromSubView}
-            />
-          )}
-          {currentView === 'manual' && (
-            <ManualView
-              setCurrentView={setCurrentView}
-              onBack={handleBackFromSubView}
-              isColorBlindMode={isColorBlindMode}
-            />
-          )}
-          {currentView === 'mypage' && (
-            <MyPageViewReloaded
-              key="mypage-v2"
-              setCurrentView={setCurrentView}
-              user={user}
-              onLogout={handleLogout}
-              onBack={handleBackFromSubView}
-            />
-          )}
-          {currentView === 'ai-chat' && (
-            <AIChatView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
-          )}
-          {currentView === 'disaster-info' && (
-            <DisasterInfoView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      <style jsx>{`
+        <style jsx>{`
                 @keyframes pulse-slow {
                     0%, 100% { opacity: 1; transform: scale(1); }
                     50% { opacity: 0.9; transform: scale(1.02); }
@@ -402,6 +436,7 @@ export default function Home() {
                 .color-blind-mode .text-xl { font-size: 1.4rem !important; }
                 .color-blind-mode .text-4xl { font-size: 2.5rem !important; font-weight: 900 !important; }
             `}</style>
-    </div>
+      </div>
+    </main>
   );
 }
