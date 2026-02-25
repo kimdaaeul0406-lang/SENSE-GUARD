@@ -97,6 +97,12 @@ export default function Home() {
     }
   };
 
+  // 현재 뷰를 참조하기 위한 Ref 추가 (콜백 안에서 쓰기 위함)
+  const currentViewRef = useRef(currentView);
+  useEffect(() => {
+    currentViewRef.current = currentView;
+  }, [currentView]);
+
   const {
     isListening,
     soundLevel,
@@ -114,19 +120,30 @@ export default function Home() {
     onThresholdExceeded: (score) => {
       if (isAutoAnalyzing) return;
 
-      console.log(`Siren score ${score.toFixed(1)} detected! Moving to analysis...`);
+      console.log(`[SENSE-GUARD] Siren score ${score.toFixed(1)} detected! Entering analysis mode...`);
       updateViewWithHysteresis('warning');
 
       if (micStream) {
         performAutoAnalysis(micStream, (result) => {
+          console.log("[SENSE-GUARD] AI Decision:", result.riskLevel);
+
           if (result.riskLevel === 'DANGER') {
             updateViewWithHysteresis('danger');
           } else if (result.riskLevel === 'SAFE') {
+            // AI가 안전하다고 판단하면 2.5초 뒤 안전화면으로 복원
             setTimeout(() => {
-              setCurrentView(prev => prev === 'warning' ? 'safe' : prev);
-            }, 3000);
+              setCurrentView(prev => (prev === 'warning' || prev === 'danger') ? prev : prev); // Prevents overriding manual changes
+              if (currentViewRef.current === 'warning') {
+                setCurrentView('safe');
+              }
+            }, 2500);
           }
+          // WARNING일 경우 현재 노란 화면 유지
         });
+      } else {
+        // 스트림이 없는데 호출된 경우 안전을 위해 safe로 복구
+        console.warn("No mic stream available for analysis. Falling back to Safe.");
+        setCurrentView('safe');
       }
     }
   });

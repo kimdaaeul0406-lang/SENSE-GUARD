@@ -83,6 +83,7 @@ export const useSoundAnalyzer = ({
         dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
 
         setIsListening(true);
+        onStatusChange('safe');
         analyzeSound();
     };
 
@@ -98,6 +99,7 @@ export const useSoundAnalyzer = ({
             setMicStream(null);
         }
         setIsListening(false);
+        onStatusChange('main');
         setSoundLevel(0);
         setSirenScore(0);
     };
