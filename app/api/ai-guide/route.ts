@@ -1,12 +1,11 @@
 /**
- * AI 행동 가이드 생성 API Route
- * 공공데이터(기상특보/화재정보/긴급재난문자)를 수집하고
- * Gemini AI를 통해 행동 가이드를 생성
+ * AI 안전 가이드 API Route
+ * 모델: gemini-2.5-flash
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 // 공공데이터 API 내부 URL (서버에서 서버로 호출)
 const getBaseUrl = (request: NextRequest) => {

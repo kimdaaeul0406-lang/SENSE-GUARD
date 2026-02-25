@@ -1,12 +1,12 @@
 /**
  * 오디오 분석 API Route
  * Gemini REST API (fetch 기반) - SDK 미사용
- * 모델: gemini-2.0-flash
+ * 모델: gemini-2.5-flash
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 export async function POST(req: NextRequest) {
     try {

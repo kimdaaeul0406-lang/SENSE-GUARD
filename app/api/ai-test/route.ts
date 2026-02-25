@@ -1,7 +1,6 @@
 /**
  * AI 테스트 API Route
- * Gemini REST API (fetch 기반) - SDK 미사용
- * 모델: gemini-2.0-flash-lite
+ * 모델: gemini-2.5-flash
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             ok: true,
-            model: 'gemini-2.0-flash-lite',
+            model: 'gemini-2.5-flash',
             prompt: prompt,
             response: aiResponse,
         });
@@ -157,7 +156,7 @@ export async function GET() {
 
         return NextResponse.json({
             ok: true,
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             prompt: testPrompt,
             response: aiResponse,
         });

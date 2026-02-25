@@ -1,12 +1,11 @@
 /**
  * AI 채팅 API Route
- * Gemini REST API (fetch 기반) - SDK 미사용
- * 재난 안전 정보 도우미
+ * 모델: gemini-2.5-flash
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 const SYSTEM_PROMPT = `당신은 SENSE-GUARD 앱의 AI 안전 도우미입니다.
 사용자에게 재난 안전 정보, 대피 요령, 응급 상황 대처법 등을 안내합니다.
