@@ -126,12 +126,52 @@ export default function Home() {
     setCurrentView('safe');
   };
 
+  // 네이티브 앱용 브릿지 함수 전역 등록 (웹 로드 즉시 등록되도록 수정)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).SGAuth = {
+        signInWithGoogleTokens: async (idToken: string, accessToken?: string) => {
+          try {
+            console.log("Bridge received tokens, loading firebase...");
+            const { auth, signInWithCredential, GoogleAuthProvider } = await import('../lib/firebase');
+            const credential = GoogleAuthProvider.credential(idToken, accessToken);
+            const result = await signInWithCredential(auth, credential);
+
+            if (result.user) {
+              const userData = {
+                id: result.user.uid,
+                name: result.user.displayName || 'Google 사용자',
+                email: result.user.email || '',
+              };
+              setUser(userData);
+              localStorage.setItem('user', JSON.stringify(userData));
+              // safe 또는 main으로 이동
+              if (typeof setCurrentView === 'function') {
+                setCurrentView('main');
+              }
+            }
+          } catch (err) {
+            console.error("Bridge Login Error:", err);
+          }
+        }
+      };
+      console.log("✅ SenseGuard Bridge Ready (Immediate)");
+    }
+  }, [setUser, setCurrentView]);
+
   const handleLogout = async () => {
     const { supabase } = await import('../lib/supabase');
+    const { auth } = await import('../lib/firebase');
+    await auth.signOut();
     await supabase.auth.signOut();
     setUser(null);
     localStorage.removeItem('user');
     setCurrentView('main');
+
+    // 네이티브 앱에도 로그아웃 알림
+    if (typeof window !== 'undefined' && (window as any).SGBridge) {
+      (window as any).SGBridge.postMessage('logout');
+    }
   };
 
   const handleBackFromSubView = () => {

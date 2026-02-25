@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { auth, googleProvider, signInWithPopup } from '../lib/firebase';
+import { auth, googleProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, GoogleAuthProvider } from '../lib/firebase';
+import { useRouter } from 'next/navigation';
 import { ShieldCheck, ArrowLeft, Mail, Lock, User as UserIcon } from 'lucide-react';
 
 interface AuthViewProps {
@@ -14,6 +15,36 @@ export const AuthView: React.FC<AuthViewProps> = ({ setCurrentView, onLoginSucce
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const router = useRouter();
+
+    // 리다이렉트 로그인 결과 처리
+    React.useEffect(() => {
+        // 앱 환경(WebView)이면 웹 자체 리다이렉트 체크를 아예 하지 않습니다.
+        // (이 체크 과정에서 엉뚱한 주소로 튕길 수 있기 때문)
+        const isApp = /SenseGuardApp/i.test(navigator.userAgent);
+        if (isApp) {
+            console.log("App detected: Bypassing web redirect check");
+            return;
+        }
+
+        const checkRedirectResult = async () => {
+            try {
+                const result = await getRedirectResult(auth);
+                if (result?.user) {
+                    const userData = {
+                        id: result.user.uid,
+                        name: result.user.displayName || 'Google 사용자',
+                        email: result.user.email || '',
+                    };
+                    onLoginSuccess(userData);
+                    setCurrentView('main');
+                }
+            } catch (err) {
+                console.error("Redirect Error:", err);
+            }
+        };
+        checkRedirectResult();
+    }, [onLoginSuccess, setCurrentView]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -87,45 +118,38 @@ export const AuthView: React.FC<AuthViewProps> = ({ setCurrentView, onLoginSucce
     };
 
     const handleGoogleLogin = async () => {
+        const isApp = /SenseGuardApp/i.test(navigator.userAgent);
+
+        if (isApp) {
+            // 앱(WebView) 환경이면 Flutter 네이티브 로그인을 요청
+            if ((window as any).SGBridge) {
+                (window as any).SGBridge.postMessage('requestLogin');
+            } else {
+                setError('앱 로그인 기능을 불러올 수 없습니다.');
+            }
+            return;
+        }
+
         try {
-            const result = await signInWithPopup(auth, googleProvider);
-            const user = result.user;
+            // 모바일 기기(브라우저)이면 리다이렉트 방식을 사용
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-            if (user) {
-                // 1. Firebase 로그인 성공 - 즉시 화면 전환
-                const userData = {
-                    id: user.uid,
-                    name: user.displayName || 'Google 사용자',
-                    email: user.email || '',
-                };
-
-                // UI 업데이트를 최우선으로 실행
-                onLoginSuccess(userData);
-                setCurrentView('main');
-
-                // 2. Supabase DB 저장은 백그라운드에서 실행 (결과 기다리지 않음)
-                supabase
-                    .from('profiles')
-                    .upsert({
-                        id: user.uid,
-                        email: user.email,
-                        name: user.displayName || 'Google 사용자',
-                        updated_at: new Date().toISOString(),
-                    }, { onConflict: 'id' })
-                    .then(({ error }) => {
-                        if (error) {
-                            // Silent fail
-                        }
-                    });
+            if (isMobile) {
+                await signInWithRedirect(auth, googleProvider);
+            } else {
+                const result = await signInWithPopup(auth, googleProvider);
+                if (result.user) {
+                    const userData = {
+                        id: result.user.uid,
+                        name: result.user.displayName || 'Google 사용자',
+                        email: result.user.email || '',
+                    };
+                    onLoginSuccess(userData);
+                    setCurrentView('main');
+                }
             }
         } catch (err) {
-            // console.error("Google Login Error:", err);
-            const firebaseError = err as { code?: string; message?: string };
-            if (firebaseError.code === 'auth/popup-closed-by-user') {
-                // Silent fail
-            } else {
-                setError('로그인에 실패했습니다. 다시 시도해주세요.');
-            }
+            setError('로그인에 실패했습니다. 다시 시도해주세요.');
         }
     };
 

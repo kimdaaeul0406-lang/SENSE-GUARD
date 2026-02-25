@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.senseguard_app",
+      "sha256_cert_fingerprints": [
+        "BD:87:90:CE:5D:82:C7:5B:25:4D:00:98:94:5F:3A:2D:95:71:B6:51:D6:3C:73:01:25:14:F7:AC:A6:A9:B7:6D"
+      ]
+    }
+  }
+]
