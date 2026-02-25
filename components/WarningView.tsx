@@ -77,7 +77,7 @@ export const WarningView: React.FC<any> = ({
                             scale: [1, 1.05, 1],
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
-                        className={`w-56 h-56 ${isColorBlindMode ? 'bg-white border-amber-200' : 'bg-white/60 border-white/50'} backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl border mb-16`}
+                        className={`w-56 h-56 ${isColorBlindMode ? 'bg-white' : 'bg-white/60'} backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl mb-16`}
                     >
                         {isCurrentlyAnalyzing ? (
                             <Search size={100} className="text-amber-400 animate-pulse" />

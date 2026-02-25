@@ -12,6 +12,7 @@ interface SafeViewProps {
     isDarkMode: boolean;
     setIsDarkMode: (val: boolean) => void;
     isColorBlindMode: boolean;
+    isAutoAnalyzing: boolean;
 }
 
 export const SafeView: React.FC<SafeViewProps> = ({
@@ -22,7 +23,8 @@ export const SafeView: React.FC<SafeViewProps> = ({
     stream,
     isDarkMode,
     setIsDarkMode,
-    isColorBlindMode
+    isColorBlindMode,
+    isAutoAnalyzing
 }) => {
     const [isSleeping, setIsSleeping] = useState(false);
 
@@ -70,9 +72,9 @@ export const SafeView: React.FC<SafeViewProps> = ({
                                 boxShadow: `0 0 ${soundLevel / 2}px ${isColorBlindMode ? 'rgba(37, 99, 235, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
                             }}
                             transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                            className={`relative w-40 h-40 backdrop-blur-xl border rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${isDarkMode
-                                ? 'bg-slate-800/40 border-slate-700'
-                                : `bg-white ${safeBorder}/50`
+                            className={`relative w-40 h-40 backdrop-blur-xl rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${isDarkMode
+                                ? 'bg-slate-800/40'
+                                : `bg-white`
                                 }`}
                         >
                             <ShieldCheck size={72} className={`${isDarkMode ? 'text-emerald-500/60' : (isColorBlindMode ? 'text-blue-600' : 'text-[#10b981]')} relative z-20`} strokeWidth={1.5} />
@@ -86,8 +88,17 @@ export const SafeView: React.FC<SafeViewProps> = ({
                     </div>
 
                     <p className={`text-sm text-center mb-8 ${isDarkMode ? 'text-slate-400' : (isColorBlindMode ? 'text-blue-800' : 'text-[#059669]')} font-bold text-base`}>
-                        {isColorBlindMode ? '✓ 안전 상태 실시간 감시 중' : '안전 감시 중'}<br />
-                        <span className="text-xs font-medium opacity-80 mt-1 block tracking-tight">주변 소리를 실시간으로 분석하고 있습니다.</span>
+                        {isAutoAnalyzing ? (
+                            <span className="flex flex-col items-center gap-2">
+                                <span className="inline-block w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
+                                AI가 소리를 정밀 분석 중입니다...
+                            </span>
+                        ) : (
+                            <>
+                                {isColorBlindMode ? '✓ 안전 상태 실시간 감시 중' : '안전 감시 중'}<br />
+                                <span className="text-xs font-medium opacity-80 mt-1 block tracking-tight">주변 소리를 실시간으로 분석하고 있습니다.</span>
+                            </>
+                        )}
                     </p>
 
                     <div className="w-full flex flex-col gap-3">

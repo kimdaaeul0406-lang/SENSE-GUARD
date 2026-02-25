@@ -41,7 +41,13 @@ export const useSoundAnalyzer = ({
 
     const requestMicPermission = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
+                }
+            });
             setMicPermission('granted');
             return stream;
         } catch {

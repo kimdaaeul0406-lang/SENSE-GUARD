@@ -111,12 +111,23 @@ export default function Home() {
     currentView,
     onStatusChange: (newView) => setCurrentView(newView),
     onThresholdExceeded: () => {
-      updateViewWithHysteresis('warning');
+      // 이미 분석 중이면 중복 요청 방지
+      if (isAutoAnalyzing) return;
+
+      console.log("Significant sound detected! Performing background AI analysis...");
+
       if (micStream) {
         performAutoAnalysis(micStream, (result) => {
-          if (result.riskLevel === 'DANGER') updateViewWithHysteresis('danger');
-          else if (result.riskLevel === 'WARNING') updateViewWithHysteresis('warning');
-          else if (currentView === 'warning') setCurrentView('safe');
+          console.log("Background analysis result:", result.riskLevel);
+
+          if (result.riskLevel === 'DANGER') {
+            updateViewWithHysteresis('danger');
+          } else if (result.riskLevel === 'WARNING') {
+            updateViewWithHysteresis('warning');
+          } else {
+            // AI가 일상 소음(SAFE)이라고 판단하면 'safe' 뷰를 유지함
+            console.log("Noise was classified as SAFE by AI. Staying in safe view.");
+          }
         });
       }
     }
@@ -244,6 +255,7 @@ export default function Home() {
               isDarkMode={isDarkMode}
               setIsDarkMode={setIsDarkMode}
               isColorBlindMode={isColorBlindMode}
+              isAutoAnalyzing={isAutoAnalyzing}
             />
           )}
           {currentView === 'warning' && (
