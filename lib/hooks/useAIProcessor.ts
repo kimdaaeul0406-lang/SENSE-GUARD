@@ -85,10 +85,13 @@ export const useAIProcessor = () => {
                     if (!res.ok) throw new Error('Network error');
 
                     const rawData = await res.json();
+                    console.log("--- AI RAW DATA RECEIVED ---", rawData);
 
                     if (rawData.error) throw new Error(rawData.error);
 
                     const result = parseAIResult(rawData.result);
+                    console.log("Parsed Result:", result);
+
                     setAiAnalysisResult(result);
                     onResult(result);
 

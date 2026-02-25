@@ -111,22 +111,22 @@ export default function Home() {
     currentView,
     onStatusChange: (newView) => setCurrentView(newView),
     onThresholdExceeded: () => {
-      // 이미 분석 중이면 중복 요청 방지
       if (isAutoAnalyzing) return;
 
-      console.log("Significant sound detected! Performing background AI analysis...");
+      // 모바일(아이폰 등) 호환성: 즉시 화면을 전환하여 마이크 스트림 연결을 유지함
+      updateViewWithHysteresis('warning');
 
       if (micStream) {
         performAutoAnalysis(micStream, (result) => {
-          console.log("Background analysis result:", result.riskLevel);
+          console.log("AI Analysis Completion. Result:", result.riskLevel);
 
           if (result.riskLevel === 'DANGER') {
             updateViewWithHysteresis('danger');
-          } else if (result.riskLevel === 'WARNING') {
-            updateViewWithHysteresis('warning');
-          } else {
-            // AI가 일상 소음(SAFE)이라고 판단하면 'safe' 뷰를 유지함
-            console.log("Noise was classified as SAFE by AI. Staying in safe view.");
+          } else if (result.riskLevel === 'SAFE') {
+            // AI가 일상 소음(SAFE)이라고 판단하면 3초 뒤 다시 안전 화면으로 복귀
+            setTimeout(() => {
+              setCurrentView(prev => prev === 'warning' ? 'safe' : prev);
+            }, 3000);
           }
         });
       }
