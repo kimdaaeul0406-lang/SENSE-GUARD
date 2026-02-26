@@ -234,249 +234,235 @@ export default function Home() {
   if (!isSettingsLoaded) return null;
 
   return (
-    <main className={`min-h-screen bg-slate-50 ${isColorBlindMode ? 'color-blind-mode' : ''}`} suppressHydrationWarning>
-      <div className="max-w-md mx-auto min-h-screen relative flex flex-col shadow-2xl bg-white overflow-x-hidden">
-        {/* 디버그 오버레이 */}
-        {isDebug && (
-          <div className="fixed bottom-24 left-4 right-4 z-[9999] bg-black/80 text-white p-3 rounded-xl text-[10px] font-mono backdrop-blur-md border border-white/20">
-            <div className="flex justify-between mb-1">
-              <span>VIEW: <span className="text-yellow-400 font-bold uppercase">{currentView}</span></span>
-              <span>NETWORK: {isOffline ? <span className="text-red-500 font-bold">OFFLINE</span> : <span className="text-emerald-500">ONLINE</span>}</span>
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-16">VOLUME:</span>
-                <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-400" style={{ width: `${soundLevel}%` }}></div>
-                </div>
-                <span className="w-6 text-right">{soundLevel.toFixed(0)}</span>
+    <div className={`flex-1 flex flex-col overflow-x-hidden ${isColorBlindMode ? 'color-blind-mode' : ''}`}>
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        setCurrentView={setCurrentView}
+        user={user}
+        onLogout={handleLogout}
+        isListening={isListening}
+      />
+
+      {/* 디버그 오버레이 (Floating) */}
+      {isDebug && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xs z-[9999] bg-black/80 text-white p-3 rounded-xl text-[10px] font-mono backdrop-blur-md border border-white/20">
+          <div className="flex justify-between mb-1">
+            <span>VIEW: <span className="text-yellow-400 font-bold uppercase">{currentView}</span></span>
+            <span>NETWORK: {isOffline ? <span className="text-red-500 font-bold">OFFLINE</span> : <span className="text-emerald-500">ONLINE</span>}</span>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-16">VOLUME:</span>
+              <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-400" style={{ width: `${soundLevel}%` }}></div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-16">LOCAL-AI:</span>
-                <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-rose-400" style={{ width: `${localSirenScore}%` }}></div>
-                </div>
-                <span className="w-6 text-right">{localSirenScore.toFixed(0)}</span>
-              </div>
+              <span className="w-6 text-right">{soundLevel.toFixed(0)}</span>
             </div>
-            {isAutoAnalyzing && <div className="mt-2 text-center text-cyan-400 animate-pulse">● AI ANALYSIS IN PROGRESS...</div>}
-            {aiError && <div className="mt-2 p-1 bg-red-900/50 text-red-100 border border-red-500 rounded whitespace-pre-wrap break-all">ERR: {aiError}</div>}
-            <div className="mt-2 pt-2 border-t border-white/10 text-[8px] opacity-40 flex justify-between">
-              <span>VER: 26.11.48</span>
-              <span>UA: {typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Android') ? 'AND' : navigator.userAgent.includes('iPhone') ? 'IOS' : 'WEB') : 'N/A'}</span>
+            <div className="flex items-center gap-2">
+              <span className="w-16">LOCAL-AI:</span>
+              <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-rose-400" style={{ width: `${localSirenScore}%` }}></div>
+              </div>
+              <span className="w-6 text-right">{localSirenScore.toFixed(0)}</span>
             </div>
           </div>
-        )}
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          setCurrentView={setCurrentView}
-          user={user}
-          onLogout={handleLogout}
-          isListening={isListening}
-        />
+          {isAutoAnalyzing && <div className="mt-2 text-center text-cyan-400 animate-pulse">● AI ANALYSIS IN PROGRESS...</div>}
+          {aiError && <div className="mt-2 p-1 bg-red-900/50 text-red-100 border border-red-500 rounded whitespace-pre-wrap break-all">ERR: {aiError}</div>}
+        </div>
+      )}
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentView}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="min-h-screen"
-          >
-            {currentView === 'intro' && (
-              <IntroView
-                hasSeenIntro={hasSeenIntro}
-                onComplete={(isGuest) => {
-                  setHasSeenIntro(true);
-                  if (isGuest) {
-                    setCurrentView('main');
-                  } else if (user) {
-                    setCurrentView('main');
-                  } else {
-                    setCurrentView('auth');
-                  }
-                }}
-              />
-            )}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentView}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.02 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="flex-1 flex flex-col"
+        >
+          {currentView === 'intro' && (
+            <IntroView
+              hasSeenIntro={hasSeenIntro}
+              onComplete={(isGuest) => {
+                setHasSeenIntro(true);
+                if (isGuest) setCurrentView('main');
+                else if (user) setCurrentView('main');
+                else setCurrentView('auth');
+              }}
+            />
+          )}
 
-            {currentView === 'guardian-setup' && (
-              <GuardianSetupView
-                userName={user?.name || ""}
-                onComplete={(phone) => {
-                  if (phone) setGuardianPhone(phone);
-                  setCurrentView('main');
-                }}
-              />
-            )}
+          {currentView === 'guardian-setup' && (
+            <GuardianSetupView
+              userName={user?.name || ""}
+              onComplete={(phone) => {
+                if (phone) setGuardianPhone(phone);
+                setCurrentView('main');
+              }}
+            />
+          )}
 
-            {currentView === 'main' && (
-              <MainView
-                setCurrentView={setCurrentView}
-                setSidebarOpen={setSidebarOpen}
-                startListening={startListening}
-              />
-            )}
-            {currentView === 'safe' && (
-              <SafeView
-                setCurrentView={setCurrentView}
-                setSidebarOpen={setSidebarOpen}
-                stopListening={stopListening}
-                soundLevel={soundLevel}
-                stream={micStream}
-                isDarkMode={isDarkMode}
-                setIsDarkMode={setIsDarkMode}
-                isColorBlindMode={isColorBlindMode}
-                isAutoAnalyzing={isAutoAnalyzing}
-                isOffline={isOffline}
-              />
-            )}
-            {currentView === 'warning' && (
-              <WarningView
-                setCurrentView={setCurrentView}
-                setSidebarOpen={setSidebarOpen}
-                stopListening={stopListening}
-                startListening={handleConfirm}
-                onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
-                aiAutoResult={aiAnalysisResult}
-                isAutoAnalyzing={isAutoAnalyzing}
-                isColorBlindMode={isColorBlindMode}
-              />
-            )}
-            {currentView === 'danger' && (
-              <DangerView
-                setCurrentView={setCurrentView}
-                setSidebarOpen={setSidebarOpen}
-                stopListening={stopListening}
-                startListening={handleConfirm}
-                onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
-                aiAutoResult={aiAnalysisResult}
-                isAutoAnalyzing={isAutoAnalyzing}
-                guardianPhone={guardianPhone}
-                isColorBlindMode={isColorBlindMode}
-              />
-            )}
-            {currentView === 'settings' && (
-              <SettingsView
-                setCurrentView={setCurrentView}
-                setSidebarOpen={setSidebarOpen}
-                isListening={isListening}
-                micPermission={micPermission}
-                notifications={notifications}
-                setNotifications={setNotifications}
-                notificationTypes={notificationTypes}
-                setNotificationTypes={setNotificationTypes}
-                notificationMethod={notificationMethod}
-                setNotificationMethod={setNotificationMethod}
-                notificationHistory={notificationHistory}
-                onDeleteNotification={(id) => setNotificationHistory(prev => prev.filter(item => item.id !== id))}
-                sensitivity={sensitivity}
-                setSensitivity={setSensitivity}
-                guardianPhone={guardianPhone}
-                setGuardianPhone={setGuardianPhone}
-                isColorBlindMode={isColorBlindMode}
-                setIsColorBlindMode={setIsColorBlindMode}
-              />
-            )}
-            {currentView === 'auth' && (
-              <AuthView
-                setCurrentView={setCurrentView}
-                onLoginSuccess={(userData) => {
-                  setUser(userData);
-                  localStorage.setItem('user', JSON.stringify(userData));
-                  // 로그인 성공 시 보호자 번호가 없으면 설정 화면으로, 있으면 메인으로
-                  if (!guardianPhone) {
-                    setCurrentView('guardian-setup');
-                  } else {
-                    setCurrentView('main');
-                  }
-                }}
-              />
-            )}
-            {currentView === 'shelter' && (
-              <ShelterView
-                setCurrentView={setCurrentView}
-                setSidebarOpen={setSidebarOpen}
-                onBack={handleBackFromSubView}
-              />
-            )}
-            {['intro', 'terms', 'help', 'how-it-works'].includes(currentView) && (
-              <InfoView
-                setCurrentView={setCurrentView}
-                type={currentView as any}
-                onBack={handleBackFromSubView}
-              />
-            )}
-            {currentView === 'manual' && (
-              <ManualView
-                setCurrentView={setCurrentView}
-                onBack={handleBackFromSubView}
-                isColorBlindMode={isColorBlindMode}
-              />
-            )}
-            {currentView === 'mypage' && (
-              <MyPageViewReloaded
-                key="mypage-v2"
-                setCurrentView={setCurrentView}
-                user={user}
-                onLogout={handleLogout}
-                onBack={handleBackFromSubView}
-              />
-            )}
-            {currentView === 'ai-chat' && (
-              <AIChatView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
-            )}
-            {currentView === 'disaster-info' && (
-              <DisasterInfoView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
-            )}
-          </motion.div>
-        </AnimatePresence>
+          {currentView === 'main' && (
+            <MainView
+              setCurrentView={setCurrentView}
+              setSidebarOpen={setSidebarOpen}
+              startListening={startListening}
+            />
+          )}
+          {currentView === 'safe' && (
+            <SafeView
+              setCurrentView={setCurrentView}
+              setSidebarOpen={setSidebarOpen}
+              stopListening={stopListening}
+              soundLevel={soundLevel}
+              stream={micStream}
+              isDarkMode={isDarkMode}
+              setIsDarkMode={setIsDarkMode}
+              isColorBlindMode={isColorBlindMode}
+              isAutoAnalyzing={isAutoAnalyzing}
+              isOffline={isOffline}
+            />
+          )}
+          {currentView === 'warning' && (
+            <WarningView
+              setCurrentView={setCurrentView}
+              setSidebarOpen={setSidebarOpen}
+              stopListening={stopListening}
+              startListening={handleConfirm}
+              onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
+              aiAutoResult={aiAnalysisResult}
+              isAutoAnalyzing={isAutoAnalyzing}
+              isColorBlindMode={isColorBlindMode}
+            />
+          )}
+          {currentView === 'danger' && (
+            <DangerView
+              setCurrentView={setCurrentView}
+              setSidebarOpen={setSidebarOpen}
+              stopListening={stopListening}
+              startListening={handleConfirm}
+              onAnalyze={() => micStream ? performManualAnalysis(micStream, currentView) : Promise.resolve("마이크 꺼짐")}
+              aiAutoResult={aiAnalysisResult}
+              isAutoAnalyzing={isAutoAnalyzing}
+              guardianPhone={guardianPhone}
+              isColorBlindMode={isColorBlindMode}
+            />
+          )}
+          {currentView === 'settings' && (
+            <SettingsView
+              setCurrentView={setCurrentView}
+              setSidebarOpen={setSidebarOpen}
+              isListening={isListening}
+              micPermission={micPermission}
+              notifications={notifications}
+              setNotifications={setNotifications}
+              notificationTypes={notificationTypes}
+              setNotificationTypes={setNotificationTypes}
+              notificationMethod={notificationMethod}
+              setNotificationMethod={setNotificationMethod}
+              notificationHistory={notificationHistory}
+              onDeleteNotification={(id) => setNotificationHistory(prev => prev.filter(item => item.id !== id))}
+              sensitivity={sensitivity}
+              setSensitivity={setSensitivity}
+              guardianPhone={guardianPhone}
+              setGuardianPhone={setGuardianPhone}
+              isColorBlindMode={isColorBlindMode}
+              setIsColorBlindMode={setIsColorBlindMode}
+            />
+          )}
+          {currentView === 'auth' && (
+            <AuthView
+              setCurrentView={setCurrentView}
+              onLoginSuccess={(userData) => {
+                setUser(userData);
+                localStorage.setItem('user', JSON.stringify(userData));
+                if (!guardianPhone) setCurrentView('guardian-setup');
+                else setCurrentView('main');
+              }}
+            />
+          )}
+          {currentView === 'shelter' && (
+            <ShelterView
+              setCurrentView={setCurrentView}
+              setSidebarOpen={setSidebarOpen}
+              onBack={handleBackFromSubView}
+            />
+          )}
+          {['intro', 'terms', 'help', 'how-it-works'].includes(currentView) && (
+            <InfoView
+              setCurrentView={setCurrentView}
+              type={currentView as any}
+              onBack={handleBackFromSubView}
+            />
+          )}
+          {currentView === 'manual' && (
+            <ManualView
+              setCurrentView={setCurrentView}
+              onBack={handleBackFromSubView}
+              isColorBlindMode={isColorBlindMode}
+            />
+          )}
+          {currentView === 'mypage' && (
+            <MyPageViewReloaded
+              key="mypage-v2"
+              setCurrentView={setCurrentView}
+              user={user}
+              onLogout={handleLogout}
+              onBack={handleBackFromSubView}
+            />
+          )}
+          {currentView === 'ai-chat' && (
+            <AIChatView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
+          )}
+          {currentView === 'disaster-info' && (
+            <DisasterInfoView setCurrentView={setCurrentView} onBack={handleBackFromSubView} />
+          )}
+        </motion.div>
+      </AnimatePresence>
 
-        <style jsx>{`
-                @keyframes pulse-slow {
-                    0%, 100% { opacity: 1; transform: scale(1); }
-                    50% { opacity: 0.9; transform: scale(1.02); }
-                }
-                @keyframes pulse-fast {
-                    0%, 100% { opacity: 1; transform: scale(1); }
-                    50% { opacity: 0.8; transform: scale(1.05); }
-                }
-                .animate-pulse-slow {
-                    animation: pulse-slow 3s ease-in-out infinite;
-                }
-                .animate-pulse-fast {
-                    animation: pulse-fast 1.5s ease-in-out infinite;
-                }
-                
-                /* 색약 보정 모드 전용 고대비 및 폰트 확대 스타일 */
-                .color-blind-mode {
-                    --cb-text-scale: 1.1;
-                    --cb-border-width: 2px;
-                }
-                
-                .color-blind-mode p, 
-                .color-blind-mode span:not(.lucide), 
-                .color-blind-mode h1, 
-                .color-blind-mode h2, 
-                .color-blind-mode h3 {
-                    letter-spacing: -0.02em;
-                    text-shadow: none !important;
-                }
+      <style jsx>{`
+              @keyframes pulse-slow {
+                  0%, 100% { opacity: 1; transform: scale(1); }
+                  50% { opacity: 0.9; transform: scale(1.02); }
+              }
+              @keyframes pulse-fast {
+                  0%, 100% { opacity: 1; transform: scale(1); }
+                  50% { opacity: 0.8; transform: scale(1.05); }
+              }
+              .animate-pulse-slow {
+                  animation: pulse-slow 3s ease-in-out infinite;
+              }
+              .animate-pulse-fast {
+                  animation: pulse-fast 1.5s ease-in-out infinite;
+              }
+              
+              .color-blind-mode {
+                  --cb-text-scale: 1.1;
+                  --cb-border-width: 2px;
+              }
+              
+              .color-blind-mode p, 
+              .color-blind-mode span:not(.lucide), 
+              .color-blind-mode h1, 
+              .color-blind-mode h2, 
+              .color-blind-mode h3 {
+                  letter-spacing: -0.02em;
+                  text-shadow: none !important;
+              }
 
-                .color-blind-mode button {
-                    border-width: var(--cb-border-width) !important;
-                    font-size: calc(100% * var(--cb-text-scale)) !important;
-                }
+              .color-blind-mode button {
+                  border-width: var(--cb-border-width) !important;
+                  font-size: calc(100% * var(--cb-text-scale)) !important;
+              }
 
-                .color-blind-mode .text-sm { font-size: 0.95rem !important; }
-                .color-blind-mode .text-xs { font-size: 0.85rem !important; }
-                .color-blind-mode .text-base { font-size: 1.1rem !important; }
-                .color-blind-mode .text-lg { font-size: 1.25rem !important; }
-                .color-blind-mode .text-xl { font-size: 1.4rem !important; }
-                .color-blind-mode .text-4xl { font-size: 2.5rem !important; font-weight: 900 !important; }
-            `}</style>
-      </div>
-    </main>
+              .color-blind-mode .text-sm { font-size: 0.95rem !important; }
+              .color-blind-mode .text-xs { font-size: 0.85rem !important; }
+              .color-blind-mode .text-base { font-size: 1.1rem !important; }
+              .color-blind-mode .text-lg { font-size: 1.25rem !important; }
+              .color-blind-mode .text-xl { font-size: 1.4rem !important; }
+              .color-blind-mode .text-4xl { font-size: 2.5rem !important; font-weight: 900 !important; }
+          `}</style>
+    </div>
   );
 }

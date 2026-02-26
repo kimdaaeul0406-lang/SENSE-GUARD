@@ -15,10 +15,16 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
 
     useEffect(() => {
         // 마이크 권한 상태 확인
-        if (navigator.permissions) {
-            navigator.permissions.query({ name: 'microphone' as PermissionName }).then((result) => {
-                setMicStatus(result.state as 'granted' | 'denied' | 'prompt');
-            }).catch(() => setMicStatus('unknown'));
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'microphone' as PermissionName })
+                .then((result) => {
+                    setMicStatus(result.state as 'granted' | 'denied' | 'prompt');
+                    result.onchange = () => setMicStatus(result.state as any);
+                })
+                .catch(() => setMicStatus('unknown'));
+        } else {
+            // Safari 등 API 미지원 브라우저 처리
+            setMicStatus('unknown');
         }
         // 알림 권한 상태 확인
         if ('Notification' in window) {
@@ -45,7 +51,7 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
     };
 
     return (
-        <div className="w-full min-h-screen flex flex-col bg-slate-50 relative overflow-x-hidden">
+        <div className="w-full min-h-[100dvh] flex flex-col bg-slate-50 relative overflow-y-auto scrollbar-hide">
             <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm z-10">
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
                 <div className="flex items-center gap-2">

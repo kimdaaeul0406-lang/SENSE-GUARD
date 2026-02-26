@@ -36,7 +36,7 @@ export const SafeView: React.FC<SafeViewProps> = ({
     const safeBorder = isColorBlindMode ? 'border-blue-100' : 'border-emerald-50';
 
     return (
-        <div className={`w-full min-h-screen relative transition-colors duration-500 ${isDarkMode ? 'bg-slate-950' : (isColorBlindMode ? 'bg-blue-50/30' : 'bg-[#f7fdf9]')}`}>
+        <div className={`w-full min-h-[100dvh] relative transition-colors duration-500 overflow-y-auto scrollbar-hide ${isDarkMode ? 'bg-slate-950' : (isColorBlindMode ? 'bg-blue-50/30' : 'bg-[#f7fdf9]')}`}>
 
             <header className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800 text-white' : `bg-white/50 ${safeBorder} text-gray-500`} backdrop-blur-md border-b px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20`}>
                 <button

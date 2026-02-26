@@ -98,6 +98,21 @@ export const useSoundAnalyzer = ({
 
         setIsListening(true);
         onStatusChange('safe');
+
+        // iOS Safari를 위한 오디오 활성화 (User Gesture 내부에서 호출 필수)
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
+        // 화면 꺼짐 방지 (WakeLock API)
+        if ('wakeLock' in navigator) {
+            try {
+                (navigator as any).wakeLock.request('screen');
+            } catch (err) {
+                console.warn("WakeLock failed:", err);
+            }
+        }
+
         analyzeSound();
     };
 

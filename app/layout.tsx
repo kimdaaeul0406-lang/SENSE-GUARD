@@ -59,9 +59,9 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-200 flex justify-center items-center min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-200 flex justify-center items-start min-h-[100dvh]`}
       >
-        <div className="w-full max-w-md min-h-screen bg-white relative shadow-2xl overflow-hidden">
+        <div className="w-full max-w-md h-[100dvh] bg-white relative shadow-2xl overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col">
           {children}
         </div>
       </body>
