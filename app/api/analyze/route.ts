@@ -26,13 +26,9 @@ export async function POST(req: NextRequest) {
 
         const arrayBuffer = await audioFile.arrayBuffer();
         const base64Audio = Buffer.from(arrayBuffer).toString('base64');
-
-        // Default to proper mime type
         const mimeType = audioFile.type || 'audio/webm';
 
-        console.log("--- STARTING AI ANALYSIS ---");
-        console.log("State:", state);
-        console.log("Audio Size:", audioFile.size);
+        console.log(`[API-ANALYZE] Processing ${audioFile.size} bytes. MIME: ${mimeType}`);
 
         const prompt = `You are a specialized audio analysis engine for the 'SENSE-GUARD' safety app. Listen to the attached audio snippet (3 seconds).
 Your task is to identify emergency sounds with absolute priority.
@@ -55,26 +51,18 @@ CRITICAL INSTRUCTIONS:
 3. FAIL-SAFE: If the sound resembles a siren, mark as DANGER. We prioritize life safety.
 `;
 
+        console.log("[API-ANALYZE] Calling Gemini API...");
         // Gemini REST API 호출
         const geminiRes = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [
-                            { text: prompt },
-                            {
-                                inlineData: {
-                                    mimeType: mimeType,
-                                    data: base64Audio
-                                }
-                            }
-                        ]
-                    }
-                ],
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType, data: base64Audio } }
+                    ]
+                }],
                 generationConfig: {
                     temperature: 0.1,
                     maxOutputTokens: 512,
@@ -83,64 +71,35 @@ CRITICAL INSTRUCTIONS:
             }),
         });
 
+        console.log(`[API-ANALYZE] Gemini Response Status: ${geminiRes.status}`);
         const rawText = await geminiRes.text();
-        console.log("--- GEMINI RAW RESPONSE ---", rawText);
 
         let geminiData;
         try {
             geminiData = JSON.parse(rawText);
         } catch {
-            console.error('Failed to parse Gemini response');
-            return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+            console.error('[API-ANALYZE] Failed to parse gemini response text:', rawText);
+            return NextResponse.json({ error: 'AI Response Parsing Error' }, { status: 500 });
         }
 
-        // Gemini API 에러 체크
         if (geminiData.error) {
-            console.error('Gemini API Error:', geminiData.error);
-            return NextResponse.json({
-                error: geminiData.error.message || 'AI analysis failed'
-            }, { status: 500 });
+            console.error('[API-ANALYZE] Gemini Service Error:', geminiData.error);
+            return NextResponse.json({ error: geminiData.error.message }, { status: 500 });
         }
 
-        // 응답 추출
         const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log("Raw AI Response:", text);
+        console.log("[API-ANALYZE] Raw Text from Gemini:", text);
 
-        // JSON 파싱 시도
         try {
-            // 마크다운 코드블록 제거 및 불필요한 공백 제거
-            let cleanText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-
-            // JSON 객체만 추출 (앞뒤 쓰레기 텍스트 제거)
-            const firstOpen = cleanText.indexOf('{');
-            const lastClose = cleanText.lastIndexOf('}');
-            if (firstOpen !== -1 && lastClose !== -1) {
-                cleanText = cleanText.substring(firstOpen, lastClose + 1);
-            }
-
-            const parsed = JSON.parse(cleanText);
+            const parsed = JSON.parse(text);
+            console.log("[API-ANALYZE] Successfully parsed JSON:", parsed);
             return NextResponse.json({
                 result: JSON.stringify(parsed),
                 parsed: parsed
             });
         } catch {
-            // JSON 파싱 실패시 텍스트에서 위험 키워드 추출 시도
-            const upperText = text.toUpperCase();
-            let fallbackResult = {
-                riskLevel: "SAFE",
-                description: "분석 중입니다.",
-                action: "잠시만 기다려주세요."
-            };
-
-            if (upperText.includes("DANGER") || upperText.includes("위험") || upperText.includes("FIRE") || upperText.includes("SIREN")) {
-                fallbackResult.riskLevel = "DANGER";
-                fallbackResult.description = text.substring(0, 50); // 앞부분이라도 표시
-            }
-
-            return NextResponse.json({
-                result: JSON.stringify(fallbackResult),
-                parsed: fallbackResult
-            });
+            console.warn("[API-ANALYZE] JSON parse failed, returning raw text as fallback.");
+            return NextResponse.json({ result: text, parsed: null });
         }
 
     } catch (error) {

@@ -58,7 +58,7 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto no-scrollbar flex flex-col items-center justify-start pt-6 px-6 w-full pb-20">
+            <main className="flex-1 overflow-y-auto no-scrollbar flex flex-col items-center justify-start pt-6 px-6 w-full pb-24 min-h-0">
                 <WeatherWidget />
                 <DisasterAlertWidget />
                 <div className="w-full mt-4">
@@ -137,7 +137,7 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
                     </div>
                 </div>
 
-                <div className="mt-auto mb-8">
+                <div className="mt-8 mb-12">
                     <p className="text-center text-xs text-gray-400 leading-relaxed">
                         AI와 공공데이터를 활용한<br />
                         안전 보조 서비스

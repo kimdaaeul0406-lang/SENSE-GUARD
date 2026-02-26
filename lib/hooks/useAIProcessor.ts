@@ -74,23 +74,37 @@ export const useAIProcessor = () => {
             };
 
             mediaRecorder.onstop = async () => {
+                console.log(`[AI-PROCESSOR] Recording stopped. Total chunks: ${chunks.length}`);
+                if (chunks.length === 0) {
+                    console.error("[AI-PROCESSOR] No audio data recorded!");
+                    setIsAutoAnalyzing(false);
+                    return;
+                }
+
                 const blob = new Blob(chunks, { type: mimeType });
+                console.log(`[AI-PROCESSOR] Blob created. Size: ${blob.size} bytes, Type: ${blob.type}`);
+
                 const formData = new FormData();
                 formData.append('audio', blob);
                 formData.append('state', 'checking');
 
                 try {
+                    console.log("[AI-PROCESSOR] Sending fetch request to /api/analyze...");
                     const res = await fetch('/api/analyze', { method: 'POST', body: formData });
 
-                    if (!res.ok) throw new Error('Network error');
+                    console.log(`[AI-PROCESSOR] Fetch response status: ${res.status}`);
+                    if (!res.ok) {
+                        const errorText = await res.text();
+                        throw new Error(`Server returned ${res.status}: ${errorText}`);
+                    }
 
                     const rawData = await res.json();
-                    console.log("--- AI RAW DATA RECEIVED ---", rawData);
+                    console.log("[AI-PROCESSOR] Raw JSON response received:", rawData);
 
                     if (rawData.error) throw new Error(rawData.error);
 
                     const result = parseAIResult(rawData.result);
-                    console.log("Parsed Result:", result);
+                    console.log("[AI-PROCESSOR] Final Parsed Result:", result);
 
                     setAiAnalysisResult(result);
                     onResult(result);

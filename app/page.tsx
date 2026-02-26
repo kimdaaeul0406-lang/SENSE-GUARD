@@ -121,40 +121,41 @@ export default function Home() {
     currentView,
     onStatusChange: (newView) => setCurrentView(newView),
     onThresholdExceeded: (score) => {
-      if (isAutoAnalyzing) return;
+      if (isAutoAnalyzing) {
+        console.log("[SENSE-GUARD] AI analysis already in progress, ignoring threshold.");
+        return;
+      }
 
       const now = Date.now();
       lastLoudTimeRef.current = now;
 
-      console.log(`[SENSE-GUARD] Siren score ${score.toFixed(1)} detected! Entering analysis mode...`);
+      console.log(`[SENSE-GUARD] Threshold triggered! Score: ${score.toFixed(1)}. Moving to Warning...`);
 
-      // 1. 우선 주의 단계로 강제 전환 (진동과 함께 즉각적인 피드백)
-      setCurrentView('warning');
-      triggerNotification('warning');
+      // 1. 강제 전환 및 진동 (Hysteresis 적용하여 우선순위 보장)
+      updateViewWithHysteresis('warning');
 
       if (micStream) {
+        console.log("[SENSE-GUARD] Triggering AI recording...");
         // 2. AI 분석 시작 (내부적으로 3초 녹음 수행)
         performAutoAnalysis(micStream, localSirenScore, (result) => {
-          console.log("[SENSE-GUARD] AI Decision:", result.riskLevel);
+          console.log("[SENSE-GUARD] AI Analysis Complete. Risk:", result.riskLevel);
 
           if (result.riskLevel === 'DANGER') {
             updateViewWithHysteresis('danger');
-            triggerNotification('danger');
           } else if (result.riskLevel === 'SAFE') {
-            // AI가 안전하다고 판단하면 최소 5초는 상황을 보여준 뒤 복귀 지연
+            // AI가 안전하다고 판단하면 최소 8초는 상황을 보여준 뒤 복귀 지연
             setTimeout(() => {
-              // 현재 실제 뷰가 'warning'이거나 'danger'일 때만 복구 시도
               if (currentViewRef.current === 'warning' || currentViewRef.current === 'danger') {
-                // 마지막 감지 이후로 충분한 시간이 지났을 때만 복구
-                if (Date.now() - lastLoudTimeRef.current > 4000) {
+                if (Date.now() - lastLoudTimeRef.current > 7000) {
+                  console.log("[SENSE-GUARD] AI confirmed SAFE. Reverting to SafeView.");
                   setCurrentView('safe');
                 }
               }
-            }, 5000);
+            }, 8000);
           }
         });
       } else {
-        console.warn("No mic stream available for analysis.");
+        console.error("[SENSE-GUARD] No mic stream available for AI analysis!");
       }
     }
   });

@@ -180,19 +180,22 @@ export const useSoundAnalyzer = ({
 
         if (!isAutoAnalyzing) {
             const now = Date.now();
-            const volumeThreshold = 145 - sensitivityRef.current; // 민감도 65 기준 80 (적정 수준으로 상향)
-            const sirenThreshold = 60; // 로컬 엔진 민감도 복구 (너무 예민하지 않게)
+            const volumeThreshold = 165 - sensitivityRef.current; // 민감도 65 기준 100 (상당히 큰 소리만 허용)
+            const sirenThreshold = 75; // 기기 로컬 감지 민감도 대폭 강화 (확실한 패턴만)
 
-            if ((normalizedLevel > volumeThreshold || finalScore > sirenThreshold) && (now - lastLoudTimeRef.current > 4000)) {
+            if ((normalizedLevel > volumeThreshold || finalScore > sirenThreshold) && (now - lastLoudTimeRef.current > 6000)) {
                 if (currentViewRef.current === 'safe') {
+                    console.log(`[ANALYZER] Threshold Exceeded! Vol: ${normalizedLevel.toFixed(1)}, Score: ${finalScore.toFixed(1)}`);
                     onThresholdExceeded(finalScore);
                     lastLoudTimeRef.current = now;
                 }
             }
 
+            // 분석 중이 아닐 때만 안전 복귀 로직 작동
             if (currentViewRef.current === 'warning' && !isAutoAnalyzing) {
-                // 주의 단계로 진입한 지 최소 5초는 지나야 다시 안전으로 복구 가능 (플리커링 방지)
-                if (now - lastLoudTimeRef.current > 5000 && normalizedLevel < 35) {
+                // 주의 단계 진입 후 최소 8초간 유지 (AI 분석 및 사용자 확인 보장)
+                if (now - lastLoudTimeRef.current > 8000 && normalizedLevel < 30) {
+                    console.log("[ANALYZER] Returning to safe state...");
                     onStatusChange('safe');
                 }
             }
