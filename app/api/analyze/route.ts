@@ -46,65 +46,81 @@ CLASSIFICATION RULES:
 - SAFE: Music, normal speech, traffic background, wind, rain, keyboard, office sounds.
 
 CRITICAL INSTRUCTIONS:
-1. SIREN PRIORITY: If a siren is detected, it is MANDATORY DANGER even if there is music or talking in the background.
-2. VIRTUAL ENVIRONMENT: The user may be testing using YouTube or speakers. Do NOT mark as SAFE just because it sounds recorded.
-3. FAIL-SAFE: If the sound resembles a siren, mark as DANGER. We prioritize life safety.
+1. SIREN DETECTION: If you hear any oscillating high-pitched sound typical of a siren (police, ambulance, fire), you MUST return "DANGER".
+2. YOUTUBE/TESTING: The user is likely testing with YouTube siren sounds. Even if it sounds thin or like it's from a speaker, classify as "DANGER".
+3. NO HESITATION: If it's a siren, "DANGER" is the only valid riskLevel.
+4. KOREAN DESCRIPTION: Provide description and action in natural Korean.
 `;
 
-        console.log("[API-ANALYZE] Calling Gemini API...");
-        // Gemini REST API 호출
-        const geminiRes = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { mimeType, data: base64Audio } }
-                    ]
-                }],
-                generationConfig: {
-                    temperature: 0.1,
-                    maxOutputTokens: 512,
-                    responseMimeType: "application/json"
+        const models = [
+            'gemini-live-2.5-flash-native-audio',
+            'gemini-1.5-flash'
+        ];
+
+        let lastModelError = '';
+
+        for (const modelName of models) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                console.log(`[API-ANALYZE] Attempting with model: ${modelName}`);
+
+                const geminiRes = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                { inlineData: { mimeType, data: base64Audio } }
+                            ]
+                        }],
+                        generationConfig: {
+                            temperature: 0.1,
+                            maxOutputTokens: 512,
+                            responseMimeType: "application/json"
+                        }
+                    }),
+                });
+
+                if (!geminiRes.ok) {
+                    const errText = await geminiRes.text();
+                    console.warn(`[API-ANALYZE] Model ${modelName} failed (${geminiRes.status}): ${errText}`);
+                    lastModelError = `${modelName}: ${geminiRes.status} - ${errText.substring(0, 100)}`; // Limit error text length
+                    continue; // 다음 모델 시도
                 }
-            }),
-        });
 
-        console.log(`[API-ANALYZE] Gemini Response Status: ${geminiRes.status}`);
-        const rawText = await geminiRes.text();
+                const geminiData = await geminiRes.json();
+                if (geminiData.error) {
+                    console.warn(`[API-ANALYZE] Gemini logic error with ${modelName}:`, geminiData.error);
+                    lastModelError = geminiData.error.message;
+                    continue;
+                }
 
-        let geminiData;
-        try {
-            geminiData = JSON.parse(rawText);
-        } catch {
-            console.error('[API-ANALYZE] Failed to parse gemini response text:', rawText);
-            return NextResponse.json({ error: 'AI Response Parsing Error' }, { status: 500 });
+                const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                console.log(`[API-ANALYZE] Raw Text from ${modelName}:`, text);
+
+                try {
+                    const parsed = JSON.parse(text);
+                    console.log("[API-ANALYZE] Successfully parsed JSON:", parsed);
+                    return NextResponse.json({
+                        result: JSON.stringify(parsed),
+                        parsed: parsed,
+                        modelUsed: modelName
+                    });
+                } catch {
+                    console.warn(`[API-ANALYZE] JSON parse failed for ${modelName}, returning raw text as fallback.`);
+                    return NextResponse.json({ result: text, parsed: null, modelUsed: modelName });
+                }
+            } catch (err: any) {
+                console.error(`[API-ANALYZE] Fetch error with ${modelName}:`, err);
+                lastModelError = err.message;
+            }
         }
 
-        if (geminiData.error) {
-            console.error('[API-ANALYZE] Gemini Service Error:', geminiData.error);
-            return NextResponse.json({ error: geminiData.error.message }, { status: 500 });
-        }
+        return NextResponse.json({ error: `All models failed. Last error: ${lastModelError}` }, { status: 500 });
 
-        const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log("[API-ANALYZE] Raw Text from Gemini:", text);
-
-        try {
-            const parsed = JSON.parse(text);
-            console.log("[API-ANALYZE] Successfully parsed JSON:", parsed);
-            return NextResponse.json({
-                result: JSON.stringify(parsed),
-                parsed: parsed
-            });
-        } catch {
-            console.warn("[API-ANALYZE] JSON parse failed, returning raw text as fallback.");
-            return NextResponse.json({ result: text, parsed: null });
-        }
-
-    } catch (error) {
-        console.error('CRITICAL ANALYSIS ERROR:', error);
-        const errorMessage = (error as Error).message || String(error);
-        return NextResponse.json({ error: `Failed to analyze: ${errorMessage}` }, { status: 500 });
+    } catch (error: any) {
+        console.error('[API-ANALYZE] Global Error:', error);
+        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }

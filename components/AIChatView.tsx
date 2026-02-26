@@ -148,7 +148,7 @@ export const AIChatView: React.FC<AIChatViewProps> = ({ setCurrentView, onBack }
     };
 
     return (
-        <div className="h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col overflow-hidden">
+        <div className="h-[100dvh] bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col overflow-hidden">
             {/* Header */}
             <header className="flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center gap-4 shadow-sm z-10">
                 <button

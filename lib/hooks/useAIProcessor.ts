@@ -10,6 +10,7 @@ export const useAIProcessor = () => {
     const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [aiAnalysisResult, setAiAnalysisResult] = useState<AIResult | null>(null);
+    const [aiError, setAiError] = useState<string | null>(null);
 
     const parseAIResult = (rawText: string): AIResult => {
         try {
@@ -61,6 +62,7 @@ export const useAIProcessor = () => {
         if (!stream || isAutoAnalyzing) return;
 
         setAiAnalysisResult(null); // 새로운 분석 시작 전 결과 초기화
+        setAiError(null);
         setIsAutoAnalyzing(true);
         console.log("Starting Auto AI Analysis...");
 
@@ -115,8 +117,9 @@ export const useAIProcessor = () => {
                         setIsAutoAnalyzing(false);
                     }, cooldown);
 
-                } catch (err) {
+                } catch (err: any) {
                     console.error("Auto AI Analysis failed", err);
+                    setAiError(err.message || String(err));
 
                     // --- 로컬 엔진(Local Guardian) 백업 로직 ---
                     if (localScore > 60) {
@@ -143,18 +146,26 @@ export const useAIProcessor = () => {
                 }
             };
 
-            mediaRecorder.start();
-            console.log("[AI-PROCESSOR] Recording started (3 seconds)...");
+            if (!stream.active) {
+                console.error("[AI-PROCESSOR] Mic stream is inactive!");
+                setAiError("마이크 스트림이 비활성화되었습니다.");
+                setIsAutoAnalyzing(false);
+                return;
+            }
 
-            // 3초로 녹음 시간 최적화 (사이렌 패턴 파악에 충분하며 속도는 더 빠름)
+            mediaRecorder.start(200); // 200ms 간격으로 데이터 확보 (모바일 안정성 상향)
+            console.log(`[AI-PROCESSOR] Recording started. State: ${mediaRecorder.state}`);
+
+            // 3초 후 중지
             setTimeout(() => {
                 if (mediaRecorder.state === 'recording') {
                     mediaRecorder.stop();
-                    console.log("[AI-PROCESSOR] Recording stopped, sending to Gemini...");
+                    console.log("[AI-PROCESSOR] 3s timeout reached, stopping recorder.");
                 }
             }, 3000);
-        } catch (e) {
+        } catch (e: any) {
             console.error("Auto Recorder Error", e);
+            setAiError(`녹음 시작 실패: ${e.message || String(e)}`);
             setIsAutoAnalyzing(false);
         }
     };
@@ -222,6 +233,7 @@ export const useAIProcessor = () => {
         setAiAnalysisResult,
         isAutoAnalyzing,
         isAnalyzing,
+        aiError,
         performAutoAnalysis,
         performManualAnalysis
     };

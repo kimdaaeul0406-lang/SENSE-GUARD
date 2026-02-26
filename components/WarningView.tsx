@@ -46,7 +46,7 @@ export const WarningView: React.FC<any> = ({
     if (!showDetailed) {
         return (
             <div
-                className={`min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col items-center justify-center p-6 relative overflow-hidden cursor-pointer`}
+                className={`w-full min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col items-center justify-center p-6 relative overflow-x-hidden cursor-pointer`}
                 onClick={() => !isCurrentlyAnalyzing && setShowDetailed(true)}
             >
                 <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -126,7 +126,7 @@ export const WarningView: React.FC<any> = ({
     let displaySoundType = aiAutoResult?.description.split(' ')[0] || "⚠️ 주의 필요 소음";
 
     return (
-        <div className={`min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col relative overflow-hidden transition-colors duration-500`}>
+        <div className={`w-full min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col relative overflow-x-hidden transition-colors duration-500`}>
             <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <AuroraBackground isActive={false} color="amber" />
             </div>
@@ -146,7 +146,7 @@ export const WarningView: React.FC<any> = ({
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center px-6 py-8 overflow-y-auto z-10 w-full">
+            <div className="flex flex-col items-center px-6 py-8 z-10 w-full pb-32">
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -206,7 +206,7 @@ export const WarningView: React.FC<any> = ({
                         행동 매뉴얼 보기 <ArrowRight size={14} className="inline ml-1" />
                     </button>
                 </motion.div>
-            </main>
+            </div>
         </div>
     );
 };

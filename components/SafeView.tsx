@@ -36,7 +36,7 @@ export const SafeView: React.FC<SafeViewProps> = ({
     const safeBorder = isColorBlindMode ? 'border-blue-100' : 'border-emerald-50';
 
     return (
-        <div className={`min-h-screen flex flex-col relative overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-slate-950' : (isColorBlindMode ? 'bg-blue-50/30' : 'bg-[#f7fdf9]')}`}>
+        <div className={`w-full min-h-screen relative transition-colors duration-500 ${isDarkMode ? 'bg-slate-950' : (isColorBlindMode ? 'bg-blue-50/30' : 'bg-[#f7fdf9]')}`}>
 
             <header className={`${isDarkMode ? 'bg-slate-900/80 border-slate-800 text-white' : `bg-white/50 ${safeBorder} text-gray-500`} backdrop-blur-md border-b px-4 py-4 pt-safe flex items-center justify-between shadow-sm flex-none sticky top-0 z-20`}>
                 <button
@@ -65,8 +65,8 @@ export const SafeView: React.FC<SafeViewProps> = ({
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center px-4 py-6 overflow-y-auto w-full z-10">
-                <div className="w-full max-w-md mx-auto flex flex-col items-center mt-4">
+            <div className="flex flex-col items-center px-4 py-6 w-full z-10 pb-32">
+                <div className="w-full max-w-md mx-auto flex flex-col items-center mt-4 mb-auto">
                     <div className="relative w-64 h-64 mb-4 flex items-center justify-center">
                         <motion.div
                             animate={{
@@ -151,7 +151,7 @@ export const SafeView: React.FC<SafeViewProps> = ({
                         </button>
                     </div>
                 </div>
-            </main>
+            </div>
 
             <AnimatePresence>
                 {isSleeping && (

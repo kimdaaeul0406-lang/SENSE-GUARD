@@ -48,6 +48,7 @@ export default function Home() {
     setAiAnalysisResult,
     isAutoAnalyzing,
     isAnalyzing,
+    aiError,
     performAutoAnalysis,
     performManualAnalysis
   } = useAIProcessor();
@@ -140,18 +141,22 @@ export default function Home() {
         performAutoAnalysis(micStream, localSirenScore, (result) => {
           console.log("[SENSE-GUARD] AI Analysis Complete. Risk:", result.riskLevel);
 
-          if (result.riskLevel === 'DANGER') {
+          if (result.riskLevel === 'DANGER' || (localSirenScore > 75 && result.riskLevel !== 'SAFE')) {
+            console.log(`[SENSE-GUARD] Moving to DANGER. AI: ${result.riskLevel}, Local: ${localSirenScore.toFixed(1)}`);
             updateViewWithHysteresis('danger');
-          } else if (result.riskLevel === 'SAFE') {
-            // AI가 안전하다고 판단하면 최소 8초는 상황을 보여준 뒤 복귀 지연
+          } else if (result.riskLevel === 'SAFE' || result.riskLevel === 'WARNING') {
+            // 안전하거나 단순 주의 상황이면 8~10초 후 자동 복귀
+            const delay = result.riskLevel === 'SAFE' ? 8000 : 12000;
+            console.log(`[SENSE-GUARD] AI result is ${result.riskLevel}. Auto-reverting in ${delay / 1000}s...`);
+
             setTimeout(() => {
               if (currentViewRef.current === 'warning' || currentViewRef.current === 'danger') {
-                if (Date.now() - lastLoudTimeRef.current > 7000) {
-                  console.log("[SENSE-GUARD] AI confirmed SAFE. Reverting to SafeView.");
+                if (Date.now() - lastLoudTimeRef.current > (delay - 1000)) {
+                  console.log(`[SENSE-GUARD] Auto-recovery: Reverting to SafeView from ${result.riskLevel}.`);
                   setCurrentView('safe');
                 }
               }
-            }, 8000);
+            }, delay);
           }
         });
       } else {
@@ -229,8 +234,8 @@ export default function Home() {
   if (!isSettingsLoaded) return null;
 
   return (
-    <main className={`min-h-screen relative overflow-hidden bg-slate-50 ${isColorBlindMode ? 'color-blind-mode' : ''}`} suppressHydrationWarning>
-      <div className="max-w-md mx-auto h-screen relative flex flex-col">
+    <main className={`min-h-screen bg-slate-50 ${isColorBlindMode ? 'color-blind-mode' : ''}`} suppressHydrationWarning>
+      <div className="max-w-md mx-auto min-h-screen relative flex flex-col shadow-2xl bg-white overflow-x-hidden">
         {/* 디버그 오버레이 */}
         {isDebug && (
           <div className="fixed bottom-24 left-4 right-4 z-[9999] bg-black/80 text-white p-3 rounded-xl text-[10px] font-mono backdrop-blur-md border border-white/20">
@@ -255,6 +260,11 @@ export default function Home() {
               </div>
             </div>
             {isAutoAnalyzing && <div className="mt-2 text-center text-cyan-400 animate-pulse">● AI ANALYSIS IN PROGRESS...</div>}
+            {aiError && <div className="mt-2 p-1 bg-red-900/50 text-red-100 border border-red-500 rounded whitespace-pre-wrap break-all">ERR: {aiError}</div>}
+            <div className="mt-2 pt-2 border-t border-white/10 text-[8px] opacity-40 flex justify-between">
+              <span>VER: 26.11.48</span>
+              <span>UA: {typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Android') ? 'AND' : navigator.userAgent.includes('iPhone') ? 'IOS' : 'WEB') : 'N/A'}</span>
+            </div>
           </div>
         )}
         <Sidebar

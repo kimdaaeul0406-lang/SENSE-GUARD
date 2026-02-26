@@ -43,7 +43,7 @@ export const DangerView: React.FC<any> = ({
 
         return (
             <div
-                className={`min-h-screen ${isColorBlindMode ? 'bg-rose-50' : 'bg-[#fff1f2]'} flex flex-col items-center justify-center p-6 relative overflow-hidden cursor-pointer`}
+                className={`w-full min-h-screen ${isColorBlindMode ? 'bg-rose-50' : 'bg-[#fff1f2]'} flex flex-col items-center justify-center p-6 relative overflow-x-hidden cursor-pointer`}
                 onClick={() => !isCurrentlyAnalyzing && setShowDetailed(true)}
             >
                 {/* 긴급 상태 배경 점멸 효과 */}
@@ -133,7 +133,7 @@ export const DangerView: React.FC<any> = ({
     let displaySoundType = aiAutoResult?.description.split(' ')[0] || "🚨 긴급 위험 상황";
 
     return (
-        <div className={`min-h-screen ${isColorBlindMode ? 'bg-rose-50' : 'bg-[#fff1f2]'} flex flex-col relative overflow-hidden transition-colors duration-500`}>
+        <div className={`w-full min-h-screen ${isColorBlindMode ? 'bg-rose-50' : 'bg-[#fff1f2]'} flex flex-col relative overflow-x-hidden transition-colors duration-500`}>
             <header className={`bg-white/50 backdrop-blur-md border-b ${isColorBlindMode ? 'border-rose-300' : 'border-rose-100'} px-4 py-4 pt-safe flex items-center justify-between shadow-sm z-20`}>
                 <button
                     onClick={() => setShowDetailed(false)}
@@ -149,7 +149,7 @@ export const DangerView: React.FC<any> = ({
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center px-6 py-8 overflow-y-auto z-10 w-full">
+            <div className="flex flex-col items-center px-6 py-8 z-10 w-full pb-32">
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -217,7 +217,7 @@ export const DangerView: React.FC<any> = ({
                         재난 행동 요령 보기 <ArrowRight size={14} className="inline ml-1" />
                     </button>
                 </motion.div>
-            </main>
+            </div>
         </div>
     );
 };

@@ -57,7 +57,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setIsColorBlindMode = () => { },
 }) => {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col">
+        <div className="w-full min-h-screen flex flex-col bg-slate-50 relative overflow-x-hidden">
             <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm sticky top-0 z-20">
                 <h1
                     onClick={() => setCurrentView(isListening ? 'safe' : 'main')}
@@ -79,7 +79,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
             </header>
 
-            <main className="flex-1 px-4 py-6 space-y-4 overflow-y-auto">
+            <div className="flex flex-col px-4 py-6 space-y-4 w-full pb-32">
                 <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-800 mb-4">소리 감지 설정</h3>
                     <div className="space-y-4">
@@ -300,7 +300,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         AI 안전 도우미
                     </button>
                 </div>
-            </main>
+            </div>
         </div>
     );
 };
