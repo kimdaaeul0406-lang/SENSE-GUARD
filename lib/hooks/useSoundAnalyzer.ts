@@ -180,10 +180,10 @@ export const useSoundAnalyzer = ({
 
         if (!isAutoAnalyzing) {
             const now = Date.now();
-            const volumeThreshold = 125 - sensitivityRef.current; // 민감도 65 기준 60 (기존 100은 도달 불가능)
-            const sirenThreshold = 45; // 로컬 엔진 민감도 하향 조정 (기존 65)
+            const volumeThreshold = 145 - sensitivityRef.current; // 민감도 65 기준 80 (적정 수준으로 상향)
+            const sirenThreshold = 60; // 로컬 엔진 민감도 복구 (너무 예민하지 않게)
 
-            if ((normalizedLevel > volumeThreshold || finalScore > sirenThreshold) && (now - lastLoudTimeRef.current > 3000)) {
+            if ((normalizedLevel > volumeThreshold || finalScore > sirenThreshold) && (now - lastLoudTimeRef.current > 4000)) {
                 if (currentViewRef.current === 'safe') {
                     onThresholdExceeded(finalScore);
                     lastLoudTimeRef.current = now;
@@ -191,7 +191,8 @@ export const useSoundAnalyzer = ({
             }
 
             if (currentViewRef.current === 'warning' && !isAutoAnalyzing) {
-                if (now - lastLoudTimeRef.current > 10000 && normalizedLevel < 30) {
+                // 주의 단계로 진입한 지 최소 5초는 지나야 다시 안전으로 복구 가능 (플리커링 방지)
+                if (now - lastLoudTimeRef.current > 5000 && normalizedLevel < 35) {
                     onStatusChange('safe');
                 }
             }

@@ -130,12 +130,15 @@ export const useAIProcessor = () => {
             };
 
             mediaRecorder.start();
-            // 5초로 녹음 시간 증가 (패턴 파악을 위해)
+            console.log("[AI-PROCESSOR] Recording started (3 seconds)...");
+
+            // 3초로 녹음 시간 최적화 (사이렌 패턴 파악에 충분하며 속도는 더 빠름)
             setTimeout(() => {
                 if (mediaRecorder.state === 'recording') {
                     mediaRecorder.stop();
+                    console.log("[AI-PROCESSOR] Recording stopped, sending to Gemini...");
                 }
-            }, 5000);
+            }, 3000);
         } catch (e) {
             console.error("Auto Recorder Error", e);
             setIsAutoAnalyzing(false);

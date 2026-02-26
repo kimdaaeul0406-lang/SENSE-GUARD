@@ -45,8 +45,8 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col">
-            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm">
+        <div className="h-full bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col overflow-hidden">
+            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm z-10">
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">SENSE-GUARD</h1>
                 <div className="flex items-center gap-2">
                     <button onClick={() => setCurrentView('mypage')} className="p-2 hover:bg-blue-50 rounded-full transition-colors">
@@ -58,7 +58,7 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center justify-start pt-6 px-6 w-full">
+            <main className="flex-1 overflow-y-auto no-scrollbar flex flex-col items-center justify-start pt-6 px-6 w-full pb-20">
                 <WeatherWidget />
                 <DisasterAlertWidget />
                 <div className="w-full mt-4">

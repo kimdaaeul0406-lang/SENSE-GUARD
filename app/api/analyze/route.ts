@@ -34,47 +34,25 @@ export async function POST(req: NextRequest) {
         console.log("State:", state);
         console.log("Audio Size:", audioFile.size);
 
-        const prompt = `You are the AI engine for 'SENSE-GUARD', a disaster prevention app.
-Listen to the attached audio snippet (3-5 seconds).
+        const prompt = `You are a specialized audio analysis engine for the 'SENSE-GUARD' safety app. Listen to the attached audio snippet (3 seconds).
+Your task is to identify emergency sounds with absolute priority.
 
-CONTEXT: The device sensor detected a loud noise. Your job is to classify WHAT made the sound.
-
-Return the response strictly in the following JSON format (no markdown, no code blocks):
+EXPECTED JSON FORMAT:
 {
     "riskLevel": "SAFE" | "WARNING" | "DANGER",
-    "description": "Short description of the sound (in Korean)",
-    "action": "Short action advice (in Korean)"
+    "description": "Specific sound name (in Korean)",
+    "action": "Immediate action advice (in Korean)"
 }
 
-=== CLASSIFICATION RULES (STRICT) ===
+CLASSIFICATION RULES:
+- DANGER: Emergency sirens (Police, Ambulance, Fire truck), Fire Alarms, Smoke Detectors, Civil defense wails, Explosions.
+- WARNING: Screaming, aggressive shouting, physical crashes, glass breaking, aggressive dog barking.
+- SAFE: Music, normal speech, traffic background, wind, rain, keyboard, office sounds.
 
-**DANGER** (Critical emergencies):
-- Fire Alarm (continuous repeating beep at fixed interval)
-- Emergency Siren (Ambulance, Fire truck, Police) - This includes rising/falling tones, two-tone "pi-po pi-po", or wailing sounds.
-- Smoke Detector (high-pitched rapid beeping)
-- Explosion or gunshot sound
-- Civil defense siren (long steady or rising/falling wail)
-
-**WARNING** (Potential threats):
-- Screaming / aggressive shouting / crying
-- Glass breaking / loud crashing
-- Aggressive dog barking / growling
-- Door being kicked or pounded
-
-**SAFE** (Normal environment):
-- Music, songs, melodies, beats, instruments (unless it is an official emergency siren)
-- Human conversation, talking, laughing (normal volume)
-- Coughing, sneezing, typing, vacuum cleaner
-- Water running, wind noise
-- Traffic noise (engines, tires), car horns (single or double honks)
-- TV/video audio at normal volume
-
-=== CRITICAL RULES (MUST FOLLOW) ===
-1. **SIMULATION TEST MODE**: The user is currently testing the app with YouTube/Videos. DO NOT classify sounds as SAFE just because they sound like they are coming from a speaker or have background music/video noise.
-2. **SIREN PRIORITY**: If you detect ANY repeating frequency modulation (Wail, Yelp, Hi-Lo, or Piercing Beeps), it is **MANDATORY DANGER**. This includes Police, Ambulance, Fire truck, and Fire Alarms.
-3. **IGNORE DISTRACTIONS**: If a siren exists alongside people talking, lyrics, or background beats, the SIREN takes absolute priority. Mark it as DANGER.
-4. **FAIL-SAFE**: We prioritize user life over false alarms. If the sound is at least 50% similar to an emergency signal, you MUST return DANGER.
-5. **DESCRIPTION**: Keep it brief in Korean, but clearly state what specific emergency sound you identified.
+CRITICAL INSTRUCTIONS:
+1. SIREN PRIORITY: If a siren is detected, it is MANDATORY DANGER even if there is music or talking in the background.
+2. VIRTUAL ENVIRONMENT: The user may be testing using YouTube or speakers. Do NOT mark as SAFE just because it sounds recorded.
+3. FAIL-SAFE: If the sound resembles a siren, mark as DANGER. We prioritize life safety.
 `;
 
         // Gemini REST API 호출
@@ -100,6 +78,7 @@ Return the response strictly in the following JSON format (no markdown, no code 
                 generationConfig: {
                     temperature: 0.1,
                     maxOutputTokens: 512,
+                    responseMimeType: "application/json"
                 }
             }),
         });

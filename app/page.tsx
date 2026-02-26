@@ -103,6 +103,8 @@ export default function Home() {
     currentViewRef.current = currentView;
   }, [currentView]);
 
+  const lastLoudTimeRef = useRef(0);
+
   const {
     isListening,
     soundLevel,
@@ -121,28 +123,35 @@ export default function Home() {
     onThresholdExceeded: (score) => {
       if (isAutoAnalyzing) return;
 
+      const now = Date.now();
+      lastLoudTimeRef.current = now;
+
       console.log(`[SENSE-GUARD] Siren score ${score.toFixed(1)} detected! Entering analysis mode...`);
 
-      // 1. 우선 주의 단계로 강제 전환 (기존 로직보다 더 확실하게)
+      // 1. 우선 주의 단계로 강제 전환 (진동과 함께 즉각적인 피드백)
       setCurrentView('warning');
       triggerNotification('warning');
 
       if (micStream) {
-        // 2. AI 분석 시작
+        // 2. AI 분석 시작 (내부적으로 3초 녹음 수행)
         performAutoAnalysis(micStream, localSirenScore, (result) => {
           console.log("[SENSE-GUARD] AI Decision:", result.riskLevel);
 
           if (result.riskLevel === 'DANGER') {
             updateViewWithHysteresis('danger');
+            triggerNotification('danger');
           } else if (result.riskLevel === 'SAFE') {
-            // AI가 안전하다고 판단하면 최소 3초는 원인을 보여준 뒤 복귀
+            // AI가 안전하다고 판단하면 최소 5초는 상황을 보여준 뒤 복귀 지연
             setTimeout(() => {
-              if (currentViewRef.current === 'warning') {
-                setCurrentView('safe');
+              // 현재 실제 뷰가 'warning'이거나 'danger'일 때만 복구 시도
+              if (currentViewRef.current === 'warning' || currentViewRef.current === 'danger') {
+                // 마지막 감지 이후로 충분한 시간이 지났을 때만 복구
+                if (Date.now() - lastLoudTimeRef.current > 4000) {
+                  setCurrentView('safe');
+                }
               }
-            }, 3000);
+            }, 5000);
           }
-          // WARNING일 경우 현재 노란 화면 유지 (사용자 확인 필요)
         });
       } else {
         console.warn("No mic stream available for analysis.");
