@@ -19,7 +19,8 @@ export const useSoundAnalyzer = ({
 }: UseSoundAnalyzerProps) => {
     const [isListening, setIsListening] = useState(false);
     const [soundLevel, setSoundLevel] = useState(0);
-    const [sirenScore, setSirenScore] = useState(0);
+    const [localSirenScore, setLocalSirenScore] = useState(0);
+    const [isOffline, setIsOffline] = useState(false);
     const [micPermission, setMicPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
     const [micStream, setMicStream] = useState<MediaStream | null>(null);
 
@@ -41,6 +42,19 @@ export const useSoundAnalyzer = ({
     useEffect(() => {
         currentViewRef.current = currentView;
     }, [currentView]);
+
+    // 온라인/오프라인 상태 감지
+    useEffect(() => {
+        const handleOffline = () => setIsOffline(true);
+        const handleOnline = () => setIsOffline(false);
+        window.addEventListener('offline', handleOffline);
+        window.addEventListener('online', handleOnline);
+        setIsOffline(!navigator.onLine);
+        return () => {
+            window.removeEventListener('offline', handleOffline);
+            window.removeEventListener('online', handleOnline);
+        };
+    }, []);
 
     const requestMicPermission = async () => {
         try {
@@ -92,7 +106,7 @@ export const useSoundAnalyzer = ({
             cancelAnimationFrame(animationFrameRef.current);
         }
         if (audioContextRef.current) {
-            audioContextRef.current.close();
+            audioContextRef.current.close().catch(() => { });
         }
         if (micStream) {
             micStream.getTracks().forEach(track => track.stop());
@@ -101,7 +115,7 @@ export const useSoundAnalyzer = ({
         setIsListening(false);
         onStatusChange('main');
         setSoundLevel(0);
-        setSirenScore(0);
+        setLocalSirenScore(0);
     };
 
     const analyzeSound = () => {
@@ -147,7 +161,7 @@ export const useSoundAnalyzer = ({
             if (pitchHistoryRef.current.length > 50) pitchHistoryRef.current.shift();
         }
 
-        // 피치가 주기적으로 변하는지 간단한 분산 계산
+        // 피치가 주기적으로 변하는지 분산 계산 (사이렌의 특징)
         let pitchVariance = 0;
         if (pitchHistoryRef.current.length > 20) {
             const avg = pitchHistoryRef.current.reduce((a, b) => a + b) / pitchHistoryRef.current.length;
@@ -155,17 +169,23 @@ export const useSoundAnalyzer = ({
             pitchVariance = Math.sqrt(variance);
         }
 
-        const score = Math.min(100, (sirenBandEnergy / (endBin - startBin) / 2) + (pitchVariance / 10));
-        setSirenScore(score);
+        // 로컬 정밀 분석 스코어 (0~100)
+        // 1. 특정 주파수 대역의 에너지
+        // 2. 주파수의 변동성 (사이렌 특유의 위잉-위잉 소리)
+        const bandScore = (sirenBandEnergy / (endBin - startBin) / 2);
+        const modulationScore = Math.min(50, pitchVariance / 8);
+        const finalScore = Math.min(100, bandScore + modulationScore);
+
+        setLocalSirenScore(finalScore);
 
         if (!isAutoAnalyzing) {
             const now = Date.now();
             const volumeThreshold = 165 - sensitivityRef.current;
-            const sirenThreshold = 70;
+            const sirenThreshold = 65; // 로컬 엔진 민감도
 
-            if ((normalizedLevel > volumeThreshold || score > sirenThreshold) && (now - lastLoudTimeRef.current > 3000)) {
+            if ((normalizedLevel > volumeThreshold || finalScore > sirenThreshold) && (now - lastLoudTimeRef.current > 3000)) {
                 if (currentViewRef.current === 'safe') {
-                    onThresholdExceeded(score);
+                    onThresholdExceeded(finalScore);
                     lastLoudTimeRef.current = now;
                 }
             }
@@ -190,7 +210,8 @@ export const useSoundAnalyzer = ({
     return {
         isListening,
         soundLevel,
-        sirenScore,
+        localSirenScore,
+        isOffline,
         micPermission,
         startListening,
         stopListening,

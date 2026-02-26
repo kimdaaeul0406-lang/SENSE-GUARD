@@ -148,9 +148,9 @@ export const AIChatView: React.FC<AIChatViewProps> = ({ setCurrentView, onBack }
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col">
+        <div className="h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col overflow-hidden">
             {/* Header */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center gap-4 shadow-sm">
+            <header className="flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-4 flex items-center gap-4 shadow-sm z-10">
                 <button
                     onClick={() => onBack ? onBack() : setCurrentView('main')}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -232,7 +232,7 @@ export const AIChatView: React.FC<AIChatViewProps> = ({ setCurrentView, onBack }
             </main>
 
             {/* Input */}
-            <div className="bg-white border-t border-gray-200 p-4">
+            <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 pb-safe-offset-4">
                 <div className="flex gap-2">
                     <input
                         type="text"

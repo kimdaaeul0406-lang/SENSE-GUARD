@@ -106,7 +106,8 @@ export default function Home() {
   const {
     isListening,
     soundLevel,
-    sirenScore,
+    localSirenScore,
+    isOffline,
     micPermission,
     startListening,
     stopListening,
@@ -124,7 +125,7 @@ export default function Home() {
       updateViewWithHysteresis('warning');
 
       if (micStream) {
-        performAutoAnalysis(micStream, (result) => {
+        performAutoAnalysis(micStream, localSirenScore, (result) => {
           console.log("[SENSE-GUARD] AI Decision:", result.riskLevel);
 
           if (result.riskLevel === 'DANGER') {
@@ -224,7 +225,7 @@ export default function Home() {
           <div className="fixed bottom-24 left-4 right-4 z-[9999] bg-black/80 text-white p-3 rounded-xl text-[10px] font-mono backdrop-blur-md border border-white/20">
             <div className="flex justify-between mb-1">
               <span>VIEW: <span className="text-yellow-400 font-bold uppercase">{currentView}</span></span>
-              <span>MIC: {isListening ? 'ON' : 'OFF'}</span>
+              <span>NETWORK: {isOffline ? <span className="text-red-500 font-bold">OFFLINE</span> : <span className="text-emerald-500">ONLINE</span>}</span>
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -235,11 +236,11 @@ export default function Home() {
                 <span className="w-6 text-right">{soundLevel.toFixed(0)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-16">SIREN:</span>
+                <span className="w-16">LOCAL-AI:</span>
                 <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-rose-400" style={{ width: `${sirenScore}%` }}></div>
+                  <div className="h-full bg-rose-400" style={{ width: `${localSirenScore}%` }}></div>
                 </div>
-                <span className="w-6 text-right">{sirenScore.toFixed(0)}</span>
+                <span className="w-6 text-right">{localSirenScore.toFixed(0)}</span>
               </div>
             </div>
             {isAutoAnalyzing && <div className="mt-2 text-center text-cyan-400 animate-pulse">● AI ANALYSIS IN PROGRESS...</div>}
@@ -307,6 +308,7 @@ export default function Home() {
                 setIsDarkMode={setIsDarkMode}
                 isColorBlindMode={isColorBlindMode}
                 isAutoAnalyzing={isAutoAnalyzing}
+                isOffline={isOffline}
               />
             )}
             {currentView === 'warning' && (

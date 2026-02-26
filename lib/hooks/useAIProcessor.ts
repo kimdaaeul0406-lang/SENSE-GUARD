@@ -57,7 +57,7 @@ export const useAIProcessor = () => {
         }
     };
 
-    const performAutoAnalysis = async (stream: MediaStream, onResult: (data: AIResult) => void) => {
+    const performAutoAnalysis = async (stream: MediaStream, localScore: number, onResult: (data: AIResult, isLocal?: boolean) => void) => {
         if (!stream || isAutoAnalyzing) return;
 
         setAiAnalysisResult(null); // 새로운 분석 시작 전 결과 초기화
@@ -103,13 +103,25 @@ export const useAIProcessor = () => {
 
                 } catch (err) {
                     console.error("Auto AI Analysis failed", err);
-                    const errorResult: AIResult = {
-                        riskLevel: 'WARNING',
-                        description: '현재 네트워크 연결이 원활하지 않아 분석이 지연되고 있습니다.',
-                        action: '주변을 직접 확인하시고 위험이 감지되면 즉시 대피하세요.'
-                    };
-                    setAiAnalysisResult(errorResult);
-                    onResult(errorResult);
+
+                    // --- 로컬 엔진(Local Guardian) 백업 로직 ---
+                    if (localScore > 60) {
+                        const localResult: AIResult = {
+                            riskLevel: 'DANGER',
+                            description: `[로컬 패턴 감지] 인터넷이 연결되지 않았지만, 기기 자체 분석 결과 위험한 사이렌 소리(Score: ${localScore.toFixed(0)})가 감지되었습니다.`,
+                            action: '즉시 주변 상황을 확인하고 안전한 곳으로 대피하세요.'
+                        };
+                        setAiAnalysisResult(localResult);
+                        onResult(localResult, true);
+                    } else {
+                        const errorResult: AIResult = {
+                            riskLevel: 'WARNING',
+                            description: '현재 네트워크 연결이 원활하지 않아 분석이 지연되고 있습니다.',
+                            action: '주변을 직접 확인하시고 위험이 감지되면 즉시 대피하세요.'
+                        };
+                        setAiAnalysisResult(errorResult);
+                        onResult(errorResult);
+                    }
 
                     setTimeout(() => {
                         setIsAutoAnalyzing(false);

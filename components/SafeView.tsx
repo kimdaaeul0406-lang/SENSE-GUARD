@@ -13,6 +13,7 @@ interface SafeViewProps {
     setIsDarkMode: (val: boolean) => void;
     isColorBlindMode: boolean;
     isAutoAnalyzing: boolean;
+    isOffline: boolean;
 }
 
 export const SafeView: React.FC<SafeViewProps> = ({
@@ -24,7 +25,8 @@ export const SafeView: React.FC<SafeViewProps> = ({
     isDarkMode,
     setIsDarkMode,
     isColorBlindMode,
-    isAutoAnalyzing
+    isAutoAnalyzing,
+    isOffline
 }) => {
     const [isSleeping, setIsSleeping] = useState(false);
 
@@ -87,7 +89,7 @@ export const SafeView: React.FC<SafeViewProps> = ({
                         <WaveformVisualizer stream={stream || null} isActive={true} color={isDarkMode ? "#059669" : (isColorBlindMode ? "#2563eb" : "#10b981")} />
                     </div>
 
-                    <p className={`text-sm text-center mb-8 ${isDarkMode ? 'text-slate-400' : (isColorBlindMode ? 'text-blue-800' : 'text-[#059669]')} font-bold text-base`}>
+                    <p className={`text-sm text-center mb-1 ${isDarkMode ? 'text-slate-400' : (isColorBlindMode ? 'text-blue-800' : 'text-[#059669]')} font-bold text-base`}>
                         {isAutoAnalyzing ? (
                             <span className="flex flex-col items-center gap-2">
                                 <span className="inline-block w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"></span>
@@ -95,11 +97,20 @@ export const SafeView: React.FC<SafeViewProps> = ({
                             </span>
                         ) : (
                             <>
-                                {isColorBlindMode ? '✓ 안전 상태 실시간 감시 중' : '안전 감시 중'}<br />
-                                <span className="text-xs font-medium opacity-80 mt-1 block tracking-tight">주변 소리를 실시간으로 분석하고 있습니다.</span>
+                                {isColorBlindMode ? '✓ 안전 상태 실시간 감시 중' : '안전 감시 중'}
                             </>
                         )}
                     </p>
+
+                    {isOffline && (
+                        <div className="mb-8 px-3 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200 animate-pulse">
+                            오프라인: 로컬 가디언 가동 중
+                        </div>
+                    )}
+
+                    {!isOffline && !isAutoAnalyzing && (
+                        <span className="text-xs font-medium opacity-80 mb-8 block tracking-tight text-center">주변 소리를 실시간으로 분석하고 있습니다.</span>
+                    )}
 
                     <div className="w-full flex flex-col gap-3">
                         <button

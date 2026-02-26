@@ -1,11 +1,11 @@
 /**
  * AI 안전 가이드 API Route
- * 모델: gemini-2.5-flash
+ * 모델: gemini-3-flash-preview
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
 
 // 공공데이터 API 내부 URL (서버에서 서버로 호출)
 const getBaseUrl = (request: NextRequest) => {
@@ -13,6 +13,17 @@ const getBaseUrl = (request: NextRequest) => {
     const protocol = host.includes('localhost') ? 'http' : 'https';
     return `${protocol}://${host}`;
 };
+
+// --- 캐싱 시스템 (10분) ---
+interface ApiCache {
+    weatherData: any;
+    fireData: any;
+    disasterData: any;
+    timestamp: number;
+}
+
+let serverCache: ApiCache | null = null;
+const CACHE_DURATION = 10 * 60 * 1000; // 10분 (밀리초)
 
 // 프롬프트 템플릿
 const PROMPT_TEMPLATE = `너는 재난·안전 상황에서 사용자가 즉시 행동할 수 있도록 안내하는 "행동 가이드 생성기"다.
@@ -182,30 +193,52 @@ export async function POST(request: NextRequest) {
     const baseUrl = getBaseUrl(request);
     const errors: string[] = [];
 
+    // 캐시 확인
+    const now = Date.now();
+    const isCacheValid = serverCache && (now - serverCache.timestamp < CACHE_DURATION);
+
     // 1. 공공데이터 API 호출
     let weatherData: WeatherAlertResponse = {};
     let fireData: FireInfoResponse = {};
     let disasterData: DisasterMessageResponse = {};
 
-    try {
-        const weatherRes = await fetch(`${baseUrl}/api/weather-alert?numOfRows=3`);
-        weatherData = await weatherRes.json();
-    } catch (e) {
-        errors.push(`기상특보 API 호출 실패: ${e instanceof Error ? e.message : 'Unknown'}`);
-    }
+    if (isCacheValid && serverCache) {
+        console.log("--- USE SERVER CACHE (ai-guide) ---");
+        weatherData = serverCache.weatherData;
+        fireData = serverCache.fireData;
+        disasterData = serverCache.disasterData;
+    } else {
+        console.log("--- FETCH NEW PUBLIC DATA (ai-guide) ---");
+        try {
+            const weatherRes = await fetch(`${baseUrl}/api/weather-alert?numOfRows=3`);
+            weatherData = await weatherRes.json();
+        } catch (e) {
+            errors.push(`기상특보 API 호출 실패: ${e instanceof Error ? e.message : 'Unknown'}`);
+        }
 
-    try {
-        const fireRes = await fetch(`${baseUrl}/api/fire-info?numOfRows=10`);
-        fireData = await fireRes.json();
-    } catch (e) {
-        errors.push(`화재정보 API 호출 실패: ${e instanceof Error ? e.message : 'Unknown'}`);
-    }
+        try {
+            const fireRes = await fetch(`${baseUrl}/api/fire-info?numOfRows=10`);
+            fireData = await fireRes.json();
+        } catch (e) {
+            errors.push(`화재정보 API 호출 실패: ${e instanceof Error ? e.message : 'Unknown'}`);
+        }
 
-    try {
-        const disasterRes = await fetch(`${baseUrl}/api/disaster-message?numOfRows=2`);
-        disasterData = await disasterRes.json();
-    } catch (e) {
-        errors.push(`재난문자 API 호출 실패: ${e instanceof Error ? e.message : 'Unknown'}`);
+        try {
+            const disasterRes = await fetch(`${baseUrl}/api/disaster-message?numOfRows=2`);
+            disasterData = await disasterRes.json();
+        } catch (e) {
+            errors.push(`재난문자 API 호출 실패: ${e instanceof Error ? e.message : 'Unknown'}`);
+        }
+
+        // 캐시 업데이트 (에러가 너무 많지 않을 때만)
+        if (errors.length < 2) {
+            serverCache = {
+                weatherData,
+                fireData,
+                disasterData,
+                timestamp: now
+            };
+        }
     }
 
     // 2. 데이터 추출 및 컨텍스트 생성
