@@ -58,6 +58,7 @@ export const useSoundAnalyzer = ({
 
     const requestMicPermission = async () => {
         try {
+            // 1차 시도: 사이렌 감지를 위해 에코 제거 등을 끄고 고품질 소리 요청
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: false,
@@ -68,9 +69,17 @@ export const useSoundAnalyzer = ({
             setMicPermission('granted');
             return stream;
         } catch (e) {
-            console.error("Mic permission error:", e);
-            setMicPermission('denied');
-            return null;
+            console.warn("High-quality mic request failed, retrying with basic settings:", e);
+            try {
+                // 2차 시도: 위 옵션들을 지원하지 않는 기기를 위해 가장 기본 설정으로 시도
+                const basicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                setMicPermission('granted');
+                return basicStream;
+            } catch (finalError) {
+                console.error("Mic permission finally denied:", finalError);
+                setMicPermission('denied');
+                return null;
+            }
         }
     };
 
