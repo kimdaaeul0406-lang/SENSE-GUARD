@@ -197,7 +197,6 @@ export default function Home() {
               };
               setUser(userData);
               localStorage.setItem('user', JSON.stringify(userData));
-              // safe 또는 main으로 이동
               if (typeof setCurrentView === 'function') {
                 setCurrentView('main');
               }
@@ -207,7 +206,39 @@ export default function Home() {
           }
         }
       };
-      console.log("✅ SenseGuard Bridge Ready (Immediate)");
+
+      // ✅ 안드로이드 웹뷰 권한 상태 강제 주입 (Shim)
+      if (typeof (window as any).Notification !== 'undefined') {
+        (window as any).Notification.permission = 'granted';
+      }
+      if (typeof navigator.permissions !== 'undefined' && (navigator.permissions as any).query) {
+        const originalQuery = navigator.permissions.query;
+        (navigator.permissions as any).query = function (q: any) {
+          if (['microphone', 'camera', 'notifications'].includes(q.name)) {
+            return Promise.resolve({ state: 'granted', status: 'granted', onchange: null });
+          }
+          return originalQuery.call(navigator.permissions, q);
+        };
+      }
+
+      // ✅ 웹의 에러를 플러터 디버그 콘솔로 전달하는 로거 (에러 객체 상세 출력)
+      const originalError = console.error;
+      console.error = function (...args) {
+        const processedArgs = args.map(arg => {
+          if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
+          if (arg && typeof arg === 'object') {
+            try { return JSON.stringify(arg); } catch (e) { return String(arg); }
+          }
+          return String(arg);
+        });
+
+        if ((window as any).SGBridge) {
+          (window as any).SGBridge.postMessage('WEB_ERROR: ' + processedArgs.join(' '));
+        }
+        originalError.apply(console, args);
+      };
+
+      console.log("✅ SenseGuard Bridge & Permission Shims Ready");
     }
   }, [setUser, setCurrentView]);
 

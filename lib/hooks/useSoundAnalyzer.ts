@@ -77,15 +77,31 @@ export const useSoundAnalyzer = ({
     const startListening = async () => {
         if (isListening) return;
 
+        // 1. 모바일 보안 정책 대응: 클릭 즉시 AudioContext 생성 및 활성화
+        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+        if (!AudioContextClass) {
+            console.error("AudioContext not supported");
+            return;
+        }
+        const audioContext = new AudioContextClass();
+
+        // 클릭 제스처 내부에서 즉시 resume 시도
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
+        // 2. 이후에 마이크 권한 요청 (비동기)
         let currentStream = micStream;
         if (!currentStream) {
             currentStream = await requestMicPermission();
-            if (!currentStream) return;
+            if (!currentStream) {
+                audioContext.close();
+                return;
+            }
             setMicStream(currentStream);
         }
 
-        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
-        const audioContext = new AudioContextClass();
+        // 3. 연결 및 분석 시작
         const source = audioContext.createMediaStreamSource(currentStream);
         const analyser = audioContext.createAnalyser();
 
@@ -98,11 +114,6 @@ export const useSoundAnalyzer = ({
 
         setIsListening(true);
         onStatusChange('safe');
-
-        // iOS Safari를 위한 오디오 활성화 (User Gesture 내부에서 호출 필수)
-        if (audioContext.state === 'suspended') {
-            await audioContext.resume();
-        }
 
         // 화면 꺼짐 방지 (WakeLock API)
         if ('wakeLock' in navigator) {

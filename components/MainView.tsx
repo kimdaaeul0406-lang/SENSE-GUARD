@@ -15,16 +15,16 @@ export const MainView: React.FC<MainViewProps> = ({ setCurrentView, setSidebarOp
 
     useEffect(() => {
         // 마이크 권한 상태 확인
-        if (navigator.permissions && navigator.permissions.query) {
+        if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
             navigator.permissions.query({ name: 'microphone' as PermissionName })
                 .then((result) => {
                     setMicStatus(result.state as 'granted' | 'denied' | 'prompt');
                     result.onchange = () => setMicStatus(result.state as any);
                 })
-                .catch(() => setMicStatus('unknown'));
+                .catch(() => setMicStatus('granted')); // 에러 시 모바일 호환을 위해 허용으로 간주
         } else {
-            // Safari 등 API 미지원 브라우저 처리
-            setMicStatus('unknown');
+            // Safari/WebView 등 API 미지원 시 기본적으로 '허용' (또는 prompt)로 간주하여 버튼 활성화
+            setMicStatus('granted');
         }
         // 알림 권한 상태 확인
         if ('Notification' in window) {
