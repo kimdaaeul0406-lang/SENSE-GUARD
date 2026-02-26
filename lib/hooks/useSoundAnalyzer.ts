@@ -68,15 +68,15 @@ export const useSoundAnalyzer = ({
             });
             setMicPermission('granted');
             return stream;
-        } catch (e) {
-            console.warn("High-quality mic request failed, retrying with basic settings:", e);
+        } catch (e: any) {
+            console.warn("High-quality mic request failed, retrying with basic settings:", e.name, e.message);
             try {
                 // 2차 시도: 위 옵션들을 지원하지 않는 기기를 위해 가장 기본 설정으로 시도
                 const basicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 setMicPermission('granted');
                 return basicStream;
-            } catch (finalError) {
-                console.error("Mic permission finally denied:", finalError);
+            } catch (finalError: any) {
+                console.error("Mic permission finally denied:", finalError.name, finalError.message);
                 setMicPermission('denied');
                 return null;
             }
