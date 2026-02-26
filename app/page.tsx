@@ -234,7 +234,7 @@ export default function Home() {
   if (!isSettingsLoaded) return null;
 
   return (
-    <div className={`flex-1 flex flex-col overflow-x-hidden ${isColorBlindMode ? 'color-blind-mode' : ''}`}>
+    <div className={`flex-1 flex flex-col ${currentView === 'intro' ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'} ${isColorBlindMode ? 'color-blind-mode' : ''}`}>
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

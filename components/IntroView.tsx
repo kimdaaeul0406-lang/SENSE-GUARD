@@ -59,7 +59,7 @@ export const IntroView: React.FC<IntroViewProps> = ({ onComplete, hasSeenIntro }
 
     if (step === 'splash') {
         return (
-            <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+            <div className="h-[100dvh] w-full bg-white flex flex-col items-center justify-center p-6 overflow-hidden relative">
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -87,7 +87,7 @@ export const IntroView: React.FC<IntroViewProps> = ({ onComplete, hasSeenIntro }
 
     if (step === 'finish') {
         return (
-            <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
+            <div className="h-[100dvh] w-full bg-white flex flex-col items-center justify-center p-8 overflow-hidden relative">
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -126,7 +126,7 @@ export const IntroView: React.FC<IntroViewProps> = ({ onComplete, hasSeenIntro }
     }
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="h-[100dvh] w-full bg-white flex flex-col overflow-hidden relative">
             <div className="flex-1 flex flex-col items-center justify-center p-8">
                 <AnimatePresence mode="wait">
                     <motion.div
