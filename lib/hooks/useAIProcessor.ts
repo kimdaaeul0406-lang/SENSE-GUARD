@@ -140,6 +140,11 @@ export const useAIProcessor = () => {
                         onResult(errorResult);
                     }
 
+                    // 에러가 왜 났는지 디버그 로그 강화 (모바일에서 확인 가능하도록)
+                    const statusMsg = navigator.onLine ? "온라인" : "오프라인";
+                    console.error(`[AI-PROCESSOR] 분석 실패: ${err.message}. 네트워크: ${statusMsg}`);
+                    setAiError(`분석 중단됨: ${err.message} (${statusMsg})`);
+
                     setTimeout(() => {
                         setIsAutoAnalyzing(false);
                     }, 4000); // 에러 시에는 좀 더 긴 쿨타임

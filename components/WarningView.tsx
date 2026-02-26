@@ -46,7 +46,7 @@ export const WarningView: React.FC<any> = ({
     if (!showDetailed) {
         return (
             <div
-                className={`w-full min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col items-center justify-center p-6 relative overflow-x-hidden cursor-pointer`}
+                className={`w-full min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col items-center justify-center p-6 relative overflow-x-hidden overflow-y-auto cursor-pointer`}
                 onClick={() => !isCurrentlyAnalyzing && setShowDetailed(true)}
             >
                 <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -126,7 +126,7 @@ export const WarningView: React.FC<any> = ({
     let displaySoundType = aiAutoResult?.description.split(' ')[0] || "⚠️ 주의 필요 소음";
 
     return (
-        <div className={`w-full min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col relative overflow-x-hidden transition-colors duration-500`}>
+        <div className={`w-full min-h-screen ${isColorBlindMode ? 'bg-amber-50' : 'bg-[#fffbeb]'} flex flex-col relative overflow-x-hidden overflow-y-auto transition-colors duration-500`}>
             <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <AuroraBackground isActive={false} color="amber" />
             </div>

@@ -180,7 +180,7 @@ export const useSoundAnalyzer = ({
 
         if (!isAutoAnalyzing) {
             const now = Date.now();
-            const volumeThreshold = 165 - sensitivityRef.current; // 민감도 65 기준 100 (상당히 큰 소리만 허용)
+            const volumeThreshold = 185 - sensitivityRef.current; // 민감도 65 기준 120 (더 큰 소리만 허용하여 기침/생활소음 방지)
             const sirenThreshold = 75; // 기기 로컬 감지 민감도 대폭 강화 (확실한 패턴만)
 
             if ((normalizedLevel > volumeThreshold || finalScore > sirenThreshold) && (now - lastLoudTimeRef.current > 6000)) {
