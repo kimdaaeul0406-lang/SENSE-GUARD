@@ -86,7 +86,7 @@ export const useSoundAnalyzer = ({
     const startListening = async () => {
         if (isListening) return;
 
-        // 1. 모바일 보안 정책 대응: 클릭 즉시 AudioContext 생성 및 활성화
+        // [중요] 최신 브라우저 대응: 클릭 즉시 오디오 객체를 먼저 생성하여 Gesture 확보
         const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
         if (!AudioContextClass) {
             console.error("AudioContext not supported");
@@ -94,46 +94,51 @@ export const useSoundAnalyzer = ({
         }
         const audioContext = new AudioContextClass();
 
-        // 클릭 제스처 내부에서 즉시 resume 시도
-        if (audioContext.state === 'suspended') {
-            await audioContext.resume();
-        }
-
-        // 2. 이후에 마이크 권한 요청 (비동기)
-        let currentStream = micStream;
-        if (!currentStream) {
-            currentStream = await requestMicPermission();
+        try {
+            // 마이크 권한 요청을 최우선으로 배치하여 Gesture 유실 방지
+            let currentStream = micStream;
             if (!currentStream) {
-                audioContext.close();
-                return;
+                currentStream = await requestMicPermission();
+                if (!currentStream) {
+                    audioContext.close();
+                    return;
+                }
+                setMicStream(currentStream);
             }
-            setMicStream(currentStream);
-        }
 
-        // 3. 연결 및 분석 시작
-        const source = audioContext.createMediaStreamSource(currentStream);
-        const analyser = audioContext.createAnalyser();
-
-        analyser.fftSize = 2048;
-        source.connect(analyser);
-
-        audioContextRef.current = audioContext;
-        analyserRef.current = analyser;
-        dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
-
-        setIsListening(true);
-        onStatusChange('safe');
-
-        // 화면 꺼짐 방지 (WakeLock API)
-        if ('wakeLock' in navigator) {
-            try {
-                (navigator as any).wakeLock.request('screen');
-            } catch (err) {
-                console.warn("WakeLock failed:", err);
+            // 오디오 장치 활성화 (Resume)
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
             }
-        }
 
-        analyzeSound();
+            const source = audioContext.createMediaStreamSource(currentStream);
+            const analyser = audioContext.createAnalyser();
+
+            analyser.fftSize = 2048;
+            source.connect(analyser);
+
+            audioContextRef.current = audioContext;
+            analyserRef.current = analyser;
+            dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+
+            setIsListening(true);
+            onStatusChange('safe');
+
+            // 화면 꺼짐 방지 (WakeLock API)
+            if ('wakeLock' in navigator) {
+                try {
+                    (navigator as any).wakeLock.request('screen');
+                } catch (err) {
+                    console.warn("WakeLock failed:", err);
+                }
+            }
+
+            analyzeSound();
+        } catch (err) {
+            console.error("Failed to start listening:", err);
+            if (audioContext) audioContext.close();
+            setIsListening(false);
+        }
     };
 
     const stopListening = () => {
