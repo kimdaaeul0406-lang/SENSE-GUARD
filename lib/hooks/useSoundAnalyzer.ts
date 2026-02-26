@@ -180,8 +180,8 @@ export const useSoundAnalyzer = ({
 
         if (!isAutoAnalyzing) {
             const now = Date.now();
-            const volumeThreshold = 165 - sensitivityRef.current;
-            const sirenThreshold = 65; // 로컬 엔진 민감도
+            const volumeThreshold = 125 - sensitivityRef.current; // 민감도 65 기준 60 (기존 100은 도달 불가능)
+            const sirenThreshold = 45; // 로컬 엔진 민감도 하향 조정 (기존 65)
 
             if ((normalizedLevel > volumeThreshold || finalScore > sirenThreshold) && (now - lastLoudTimeRef.current > 3000)) {
                 if (currentViewRef.current === 'safe') {
