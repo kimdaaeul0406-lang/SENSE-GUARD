@@ -129,16 +129,39 @@ Return the response strictly in the following JSON format (no markdown, no code 
 
         // JSON 파싱 시도
         try {
-            // 마크다운 코드블록 제거
-            const cleanText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            // 마크다운 코드블록 제거 및 불필요한 공백 제거
+            let cleanText = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+            // JSON 객체만 추출 (앞뒤 쓰레기 텍스트 제거)
+            const firstOpen = cleanText.indexOf('{');
+            const lastClose = cleanText.lastIndexOf('}');
+            if (firstOpen !== -1 && lastClose !== -1) {
+                cleanText = cleanText.substring(firstOpen, lastClose + 1);
+            }
+
             const parsed = JSON.parse(cleanText);
             return NextResponse.json({
                 result: JSON.stringify(parsed),
                 parsed: parsed
             });
         } catch {
-            // JSON 파싱 실패시 원본 텍스트 반환
-            return NextResponse.json({ result: text });
+            // JSON 파싱 실패시 텍스트에서 위험 키워드 추출 시도
+            const upperText = text.toUpperCase();
+            let fallbackResult = {
+                riskLevel: "SAFE",
+                description: "분석 중입니다.",
+                action: "잠시만 기다려주세요."
+            };
+
+            if (upperText.includes("DANGER") || upperText.includes("위험") || upperText.includes("FIRE") || upperText.includes("SIREN")) {
+                fallbackResult.riskLevel = "DANGER";
+                fallbackResult.description = text.substring(0, 50); // 앞부분이라도 표시
+            }
+
+            return NextResponse.json({
+                result: JSON.stringify(fallbackResult),
+                parsed: fallbackResult
+            });
         }
 
     } catch (error) {

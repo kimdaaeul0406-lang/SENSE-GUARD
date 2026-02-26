@@ -122,29 +122,30 @@ export default function Home() {
       if (isAutoAnalyzing) return;
 
       console.log(`[SENSE-GUARD] Siren score ${score.toFixed(1)} detected! Entering analysis mode...`);
-      updateViewWithHysteresis('warning');
+
+      // 1. 우선 주의 단계로 강제 전환 (기존 로직보다 더 확실하게)
+      setCurrentView('warning');
+      triggerNotification('warning');
 
       if (micStream) {
+        // 2. AI 분석 시작
         performAutoAnalysis(micStream, localSirenScore, (result) => {
           console.log("[SENSE-GUARD] AI Decision:", result.riskLevel);
 
           if (result.riskLevel === 'DANGER') {
             updateViewWithHysteresis('danger');
           } else if (result.riskLevel === 'SAFE') {
-            // AI가 안전하다고 판단하면 2.5초 뒤 안전화면으로 복원
+            // AI가 안전하다고 판단하면 최소 3초는 원인을 보여준 뒤 복귀
             setTimeout(() => {
-              setCurrentView(prev => (prev === 'warning' || prev === 'danger') ? prev : prev); // Prevents overriding manual changes
               if (currentViewRef.current === 'warning') {
                 setCurrentView('safe');
               }
-            }, 2500);
+            }, 3000);
           }
-          // WARNING일 경우 현재 노란 화면 유지
+          // WARNING일 경우 현재 노란 화면 유지 (사용자 확인 필요)
         });
       } else {
-        // 스트림이 없는데 호출된 경우 안전을 위해 safe로 복구
-        console.warn("No mic stream available for analysis. Falling back to Safe.");
-        setCurrentView('safe');
+        console.warn("No mic stream available for analysis.");
       }
     }
   });
