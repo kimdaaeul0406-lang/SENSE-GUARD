@@ -58,26 +58,27 @@ export const useSoundAnalyzer = ({
 
     const requestMicPermission = async () => {
         try {
-            // 1차 시도: 사이렌 감지를 위해 에코 제거 등을 끄고 고품질 소리 요청
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: false,
-                    noiseSuppression: false,
-                    autoGainControl: false
-                }
-            });
+            // 1차 시도: 일반적인 기본 설정으로 요청 (가장 호환성이 높음)
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             setMicPermission('granted');
             return stream;
         } catch (e: any) {
-            console.warn("High-quality mic request failed, retrying with basic settings:", e.name, e.message);
+            console.warn("Standard mic request failed, trying high-quality fallback:", e.name, e.message);
             try {
-                // 2차 시도: 위 옵션들을 지원하지 않는 기기를 위해 가장 기본 설정으로 시도
-                const basicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // 2차 시도: 그래도 안 되면 마지막 수단으로 무조건 마이크만 요청
+                const finalStream = await (navigator.mediaDevices as any).getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
                 setMicPermission('granted');
-                return basicStream;
+                return finalStream;
             } catch (finalError: any) {
                 console.error("Mic permission finally denied:", finalError.name, finalError.message);
                 setMicPermission('denied');
+
+                // [타파!] 마이크 권한이 최종 거부되면 플러터(네이티브)에 도움을 요청함
+                if (typeof window !== 'undefined' && (window as any).SGBridge) {
+                    console.log("Requesting help from Flutter Bridge for Mic Permission...");
+                    (window as any).SGBridge.postMessage('checkMicPermission');
+                }
+
                 return null;
             }
         }
