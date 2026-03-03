@@ -60,6 +60,7 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-200 flex justify-center items-start min-h-[100dvh]`}
+        suppressHydrationWarning
       >
         <div className="w-full max-w-md h-[100dvh] bg-white relative shadow-2xl overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col">
           {children}

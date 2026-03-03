@@ -209,7 +209,14 @@ export default function Home() {
 
       // ✅ 안드로이드 웹뷰 권한 상태 강제 주입 (Shim)
       if (typeof (window as any).Notification !== 'undefined') {
-        (window as any).Notification.permission = 'granted';
+        const OriginalNotification = (window as any).Notification;
+        const ShimmedNotification = function (title: string, options?: any) {
+          return new OriginalNotification(title, options);
+        };
+        ShimmedNotification.permission = 'granted';
+        ShimmedNotification.requestPermission = () => Promise.resolve('granted' as NotificationPermission);
+        ShimmedNotification.prototype = OriginalNotification.prototype;
+        (window as any).Notification = ShimmedNotification;
       }
       if (typeof navigator.permissions !== 'undefined' && (navigator.permissions as any).query) {
         const originalQuery = navigator.permissions.query;
