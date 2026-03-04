@@ -291,15 +291,21 @@ export const useSoundAnalyzer = ({
 
     const requestMicPermission = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // 에코캔슬링·노이즈억제 OFF → 스피커 소리(사이렌 테스트 등)도 픽업 가능
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false,
+                }
+            });
             setMicPermission('granted');
             return stream;
         } catch (e: any) {
-            console.warn('Standard mic request failed:', e.name);
+            console.warn('Mic request failed (no-echo), trying basic:', e.name);
             try {
-                const finalStream = await (navigator.mediaDevices as any).getUserMedia({
-                    audio: { echoCancellation: true, noiseSuppression: true },
-                });
+                // 폴백: 가장 기본 설정으로 재시도
+                const finalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 setMicPermission('granted');
                 return finalStream;
             } catch (finalError: any) {

@@ -117,7 +117,7 @@ export const DangerView: React.FC<any> = ({
                             rotate: isSiren ? [0, 5, -5, 0] : [0, 2, -2, 0]
                         }}
                         transition={{ duration: 1, repeat: Infinity }}
-                        className={`w-56 h-56 ${isColorBlindMode ? 'bg-white' : 'bg-white/60'} backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl mb-16`}
+                        className={`w-56 h-56 ${isColorBlindMode ? 'bg-white' : 'bg-white/90'} rounded-full flex items-center justify-center shadow-2xl mb-16`}
                     >
                         {isCurrentlyAnalyzing ? (
                             <Search size={100} className="text-rose-400 animate-pulse" />
