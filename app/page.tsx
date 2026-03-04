@@ -372,6 +372,7 @@ export default function Home() {
               isColorBlindMode={isColorBlindMode}
               isAutoAnalyzing={isAutoAnalyzing}
               isOffline={isOffline}
+              localDetection={localDetection}
             />
           )}
           {currentView === 'warning' && (

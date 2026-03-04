@@ -100,9 +100,9 @@ function classifyLocalSound(
     sampleIntervalMs: number,
 ): LocalDetectionResult {
 
-    const SIREN_ENERGY_THRESH = 40;  // 사이렌 대역 에너지 최소 임계값
-    const FIRE_ALARM_THRESH = 50;  // 화재경보 에너지 최소 임계값
-    const LOUD_THRESH = 70;  // 단순 고음량 임계값
+    const SIREN_ENERGY_THRESH = 30;  // 사이렌 대역 에너지 최소 임계값 (하향)
+    const FIRE_ALARM_THRESH = 40;  // 화재경보 에너지 최소 임계값 (하향)
+    const LOUD_THRESH = 55;  // 단순 고음량 임계값 (하향)
 
     // ── 1. 화재경보 검사 ──────────────────────
     // 특징: 2500~4200 Hz 강한 에너지 + 규칙적 on/off 펄스
@@ -432,9 +432,14 @@ export const useSoundAnalyzer = ({
         // ── 임계값 초과 시 상위 컴포넌트에 알림 ──
         if (!isAutoAnalyzing) {
             const now = Date.now();
-            const volumeThreshold = 185 - sensitivityRef.current;
-            const DANGER_SCORE = 65;   // 위험 판정 최소 점수
-            const COOLDOWN_MS = 6000; // 재알림 쿨다운
+
+            // ★ 수정된 볼륨 임계값 공식:
+            // sensitivity 0(둔감)  → 임계 85 (매우 큰 소리만)
+            // sensitivity 50(보통) → 임계 55 (중간 소리)
+            // sensitivity 100(민감)→ 임계 25 (작은 소리도)
+            const volumeThreshold = 85 - (sensitivityRef.current * 0.6);
+            const DANGER_SCORE = 55;   // 위험 판정 최소 점수 (완화)
+            const COOLDOWN_MS = 5000; // 재알림 쿨다운
 
             const isDangerDetected =
                 result.isDanger && result.score >= DANGER_SCORE

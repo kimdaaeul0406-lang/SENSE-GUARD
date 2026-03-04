@@ -104,7 +104,8 @@ export async function addEmergencyContact(
         .single();
 
     if (error) {
-        return null; // Silent fail
+        console.error('[Supabase] addEmergencyContact 오류:', error.code, error.message, error.details);
+        return null;
     }
     return data;
 }
@@ -164,7 +165,8 @@ export async function deleteEmergencyContact(contactId: string): Promise<boolean
         .eq('id', contactId);
 
     if (error) {
-        return false; // Silent fail
+        console.error('[Supabase] deleteEmergencyContact 오류:', error.code, error.message);
+        return false;
     }
     return true;
 }
@@ -180,6 +182,7 @@ export async function updateEmergencyContact(
         .eq('id', contactId);
 
     if (error) {
+        console.error('[Supabase] updateEmergencyContact 오류:', error.code, error.message);
         return false;
     }
     return true;

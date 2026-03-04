@@ -55,19 +55,19 @@ export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurre
             return;
         }
 
-        // 간단한 전화번호 검증 (숫자, -, + 포함 가능)
-        const phoneRegex = /^[0-9+\-\s]{8,15}$/;
-        if (!phoneRegex.test(editPhone)) {
-            alert('유효한 전화번호 형식이 아닙니다. (예: 010-1234-5678)');
+        const cleanPhone = editPhone.replace(/[\s\-]/g, '');
+        const phoneRegex = /^[0-9+]{7,15}$/;
+        if (!phoneRegex.test(cleanPhone)) {
+            alert('유효한 전화번호를 입력해 주세요.\n(예: 010-1234-5678)');
             return;
         }
 
-        const success = await updateEmergencyContact(id, editName, editPhone);
+        const success = await updateEmergencyContact(id, editName.trim(), editPhone.trim());
         if (success) {
             setContacts(contacts.map(c => c.id === id ? { ...c, name: editName, phone: editPhone } : c));
             setEditingId(null);
         } else {
-            alert('연락처 수정에 실패했습니다.');
+            alert('연락처 수정에 실패했습니다.\n로그인 세션이 만료되었을 수 있습니다. 다시 로그인해 주세요.');
         }
     };
 
@@ -77,22 +77,27 @@ export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurre
             return;
         }
 
-        const phoneRegex = /^[0-9+\-\s]{8,15}$/;
-        if (!phoneRegex.test(newContactPhone)) {
-            alert('유효한 전화번호 형식이 아닙니다.');
+        // 한국 전화번호 포함 다양한 형식 허용 (010-1234-5678, 01012345678, +821012345678 등)
+        const cleanPhone = newContactPhone.replace(/[\s\-]/g, '');
+        const phoneRegex = /^[0-9+]{7,15}$/;
+        if (!phoneRegex.test(cleanPhone)) {
+            alert('유효한 전화번호를 입력해 주세요.\n(예: 010-1234-5678)');
             return;
         }
 
-        if (user) {
-            const newContact = await addEmergencyContact(user.id, newContactName, newContactPhone);
-            if (newContact) {
-                setContacts([...contacts, { id: newContact.id, name: newContact.name, phone: newContact.phone }]);
-                setNewContactName("");
-                setNewContactPhone("");
-                setIsEditing(false);
-            } else {
-                alert('연락처 추가에 실패했습니다.');
-            }
+        if (!user) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        const newContact = await addEmergencyContact(user.id, newContactName.trim(), newContactPhone.trim());
+        if (newContact) {
+            setContacts([...contacts, { id: newContact.id, name: newContact.name, phone: newContact.phone }]);
+            setNewContactName("");
+            setNewContactPhone("");
+            setIsEditing(false);
+        } else {
+            alert('연락처 추가에 실패했습니다.\n\n주요 원인:\n• 로그인 세션 만료 → 다시 로그인 후 시도\n• 네트워크 문제 → 잠시 후 재시도\n\n[개발자] 콘솔(F12)에서 Supabase 오류 내용을 확인하세요.');
         }
     };
 
@@ -125,13 +130,23 @@ export const MyPageViewReloaded: React.FC<MyPageViewReloadedProps> = ({ setCurre
     };
 
     const handleSOS = (phone: string) => {
-        if (!phone) return;
-        const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
-        const message = encodeURIComponent('🚨 [SENSE-GUARD 긴급 알림] 테스트 메시지입니다.');
-        const link = `sms:${phone}${isMobile && navigator.userAgent.toLowerCase().includes('iphone') ? '&' : '?'}body=${message}`;
+        if (!phone) {
+            alert('전화번호가 없습니다.');
+            return;
+        }
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isMobile = /iphone|ipad|ipod|android/i.test(userAgent);
+        const isIos = /iphone|ipad|ipod/i.test(userAgent);
+
+        const messageText = '🚨 [SENSE-GUARD 긴급 알림] 테스트 메시지입니다.';
+        const message = encodeURIComponent(messageText);
+        const separator = isIos ? '&' : '?';
+        const link = `sms:${phone}${separator}body=${message}`;
 
         if (!isMobile) {
-            const confirmed = window.confirm(`[PC/웹 테스트]\n\n수신번호: ${phone}\n내용: ${decodeURIComponent(message)}\n\n(실제 모바일에서는 문자 앱이 열립니다)`);
+            const confirmed = window.confirm(
+                `[PC/웹 테스트]\n\n수신번호: ${phone}\n내용: ${messageText}\n\n(실제 모바일에서는 문자 앱이 열립니다)`
+            );
             if (confirmed) window.location.href = link;
         } else {
             window.location.href = link;

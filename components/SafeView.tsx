@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Menu, Settings, Moon, Sun, MonitorOff } from 'lucide-react';
+import { ShieldCheck, Menu, Settings, Moon, Sun } from 'lucide-react';
 import { WaveformVisualizer } from './WaveformVisualizer';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { LocalDetectionResult } from '../lib/hooks/useSoundAnalyzer';
 
 interface SafeViewProps {
     setCurrentView: (view: string) => void;
@@ -14,6 +15,7 @@ interface SafeViewProps {
     isColorBlindMode: boolean;
     isAutoAnalyzing: boolean;
     isOffline: boolean;
+    localDetection?: LocalDetectionResult | null;
 }
 
 export const SafeView: React.FC<SafeViewProps> = ({
@@ -26,7 +28,8 @@ export const SafeView: React.FC<SafeViewProps> = ({
     setIsDarkMode,
     isColorBlindMode,
     isAutoAnalyzing,
-    isOffline
+    isOffline,
+    localDetection,
 }) => {
     const [isSleeping, setIsSleeping] = useState(false);
 
@@ -71,12 +74,12 @@ export const SafeView: React.FC<SafeViewProps> = ({
                         <motion.div
                             animate={{
                                 scale: 1 + (soundLevel / 500),
-                                boxShadow: `0 0 ${soundLevel / 2}px ${isColorBlindMode ? 'rgba(37, 99, 235, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
+                                boxShadow: `0 0 ${soundLevel / 2}px ${isColorBlindMode ? 'rgba(37, 99, 235, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
                             }}
                             transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                            className={`relative w-40 h-40 backdrop-blur-xl rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${isDarkMode
-                                ? 'bg-slate-800/40'
-                                : `bg-white`
+                            className={`relative w-40 h-40 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${isDarkMode
+                                ? 'bg-slate-800'
+                                : 'bg-white'
                                 }`}
                         >
                             <ShieldCheck size={72} className={`${isDarkMode ? 'text-emerald-500/60' : (isColorBlindMode ? 'text-blue-600' : 'text-[#10b981]')} relative z-20`} strokeWidth={1.5} />
@@ -101,6 +104,25 @@ export const SafeView: React.FC<SafeViewProps> = ({
                             </>
                         )}
                     </p>
+
+                    {/* ▶ 실시간 감지 상태 배너 */}
+                    {localDetection && localDetection.type !== 'safe' && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`w-full mb-4 px-4 py-3 rounded-2xl border flex items-center gap-3 ${localDetection.isDanger
+                                ? 'bg-rose-50 border-rose-200 text-rose-700'
+                                : 'bg-amber-50 border-amber-200 text-amber-700'
+                                }`}
+                        >
+                            <span className="text-xl">{localDetection.isDanger ? '🚨' : '⚠️'}</span>
+                            <div className="flex-1">
+                                <p className="text-xs font-black">{localDetection.label}</p>
+                                <p className="text-[10px] opacity-70">{localDetection.description}</p>
+                            </div>
+                            <span className="text-[10px] font-bold opacity-60">{localDetection.score.toFixed(0)}%</span>
+                        </motion.div>
+                    )}
 
                     {isOffline && (
                         <div className="mb-8 px-3 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200 animate-pulse">
