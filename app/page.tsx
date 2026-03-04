@@ -110,6 +110,7 @@ export default function Home() {
     isListening,
     soundLevel,
     localSirenScore,
+    localDetection,
     isOffline,
     micPermission,
     startListening,
@@ -121,7 +122,7 @@ export default function Home() {
     isAutoAnalyzing,
     currentView,
     onStatusChange: (newView) => setCurrentView(newView),
-    onThresholdExceeded: (score) => {
+    onThresholdExceeded: (score, detectedType) => {
       if (isAutoAnalyzing) {
         console.log("[SENSE-GUARD] AI analysis already in progress, ignoring threshold.");
         return;
@@ -130,14 +131,21 @@ export default function Home() {
       const now = Date.now();
       lastLoudTimeRef.current = now;
 
-      console.log(`[SENSE-GUARD] Threshold triggered! Score: ${score.toFixed(1)}. Moving to Warning...`);
+      console.log(`[SENSE-GUARD] Threshold triggered! Score: ${score.toFixed(1)}, Type: ${detectedType}. Moving to Warning...`);
 
       // 1. 강제 전환 및 진동 (Hysteresis 적용하여 우선순위 보장)
       updateViewWithHysteresis('warning');
 
+      // 2. 로컬 감지 결과가 이미 명확한 사이렌이면 즉시 DANGER 전환
+      const localDangerTypes = ['fire_alarm', 'ambulance', 'firetruck', 'police', 'siren'];
+      if (detectedType && localDangerTypes.includes(detectedType) && score >= 70) {
+        console.log(`[SENSE-GUARD] Local detection confident (${detectedType}, ${score.toFixed(0)}). Jumping to DANGER.`);
+        updateViewWithHysteresis('danger');
+      }
+
       if (micStream) {
         console.log("[SENSE-GUARD] Triggering AI recording...");
-        // 2. AI 분석 시작 (내부적으로 3초 녹음 수행)
+        // 3. AI 분석 시작 (내부적으로 3초 녹음 수행)
         performAutoAnalysis(micStream, localSirenScore, (result) => {
           console.log("[SENSE-GUARD] AI Analysis Complete. Risk:", result.riskLevel);
 
@@ -145,7 +153,6 @@ export default function Home() {
             console.log(`[SENSE-GUARD] Moving to DANGER. AI: ${result.riskLevel}, Local: ${localSirenScore.toFixed(1)}`);
             updateViewWithHysteresis('danger');
           } else if (result.riskLevel === 'SAFE' || result.riskLevel === 'WARNING') {
-            // 안전하거나 단순 주의 상황이면 8~10초 후 자동 복귀
             const delay = result.riskLevel === 'SAFE' ? 8000 : 12000;
             console.log(`[SENSE-GUARD] AI result is ${result.riskLevel}. Auto-reverting in ${delay / 1000}s...`);
 
@@ -298,12 +305,17 @@ export default function Home() {
               <span className="w-6 text-right">{soundLevel.toFixed(0)}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-16">LOCAL-AI:</span>
+              <span className="w-16">LOCAL:</span>
               <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
                 <div className="h-full bg-rose-400" style={{ width: `${localSirenScore}%` }}></div>
               </div>
               <span className="w-6 text-right">{localSirenScore.toFixed(0)}</span>
             </div>
+            {localDetection && localDetection.type !== 'safe' && (
+              <div className="mt-1 px-2 py-0.5 bg-rose-900/60 border border-rose-500 rounded text-rose-200 text-[9px]">
+                {localDetection.label} ({localDetection.score.toFixed(0)}%)
+              </div>
+            )}
           </div>
           {isAutoAnalyzing && <div className="mt-2 text-center text-cyan-400 animate-pulse">● AI ANALYSIS IN PROGRESS...</div>}
           {aiError && <div className="mt-2 p-1 bg-red-900/50 text-red-100 border border-red-500 rounded whitespace-pre-wrap break-all">ERR: {aiError}</div>}
@@ -385,6 +397,7 @@ export default function Home() {
               isAutoAnalyzing={isAutoAnalyzing}
               guardianPhone={guardianPhone}
               isColorBlindMode={isColorBlindMode}
+              localDetection={localDetection}
             />
           )}
           {currentView === 'settings' && (

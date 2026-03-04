@@ -1,11 +1,11 @@
 /**
  * AI 안전 가이드 API Route
- * 모델: gemini-3-flash-preview
+ * 모델: gemini-2.5-flash-lite
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
 
 // 공공데이터 API 내부 URL (서버에서 서버로 호출)
 const getBaseUrl = (request: NextRequest) => {

@@ -1,12 +1,12 @@
 /**
  * 오디오 분석 API Route
  * Gemini REST API (fetch 기반) - SDK 미사용
- * 모델: gemini-live-2.5-flash-native-audio (소리 감지에 최적화)
+ * 모델: gemini-2.5-flash-lite (1순위) → gemini-2.5-flash (백업)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-live-2.5-flash-native-audio:generateContent';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 export async function POST(req: NextRequest) {
     try {
@@ -53,17 +53,15 @@ CRITICAL INSTRUCTIONS:
 `;
 
         const models = [
-            'gemini-3-flash-preview',
-            'gemini-2.0-flash',
-            'gemini-live-2.5-flash-native-audio',
-            'gemini-1.5-flash'
+            'gemini-2.5-flash-lite',  // 1순위: 무료 한도 최대, 가장 빠름
+            'gemini-2.5-flash',       // 2순위: 추론 능력 더 우수
         ];
 
         let lastModelError = '';
 
         for (const modelName of models) {
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                const url = `${GEMINI_API_BASE}/${modelName}:generateContent?key=${apiKey}`;
                 console.log(`[API-ANALYZE] Attempting with model: ${modelName}`);
 
                 const geminiRes = await fetch(url, {

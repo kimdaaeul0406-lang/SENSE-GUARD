@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, Shield, Search, ArrowRight, Phone, MessageCircle, Flame, Siren, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { AuroraBackground } from './AuroraBackground';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { LocalDetectionResult } from '../lib/hooks/useSoundAnalyzer';
 
 export const DangerView: React.FC<any> = ({
     setCurrentView,
@@ -9,7 +10,16 @@ export const DangerView: React.FC<any> = ({
     startListening,
     aiAutoResult,
     isAutoAnalyzing,
-    isColorBlindMode
+    isColorBlindMode,
+    localDetection,
+}: {
+    setCurrentView: (v: string) => void;
+    setSidebarOpen: (v: boolean) => void;
+    startListening: () => void;
+    aiAutoResult: any;
+    isAutoAnalyzing: boolean;
+    isColorBlindMode: boolean;
+    localDetection?: LocalDetectionResult | null;
 }) => {
     const [showDetailed, setShowDetailed] = useState(false);
     const [isLocalAnalyzing, setIsLocalAnalyzing] = useState(true);
@@ -26,12 +36,35 @@ export const DangerView: React.FC<any> = ({
     // 위험 종류별 아이콘 및 테마 결정
     const getDangerInfo = () => {
         const desc = aiAutoResult?.description || "";
-        if (desc.includes("화재") || desc.includes("불") || desc.includes("Fire")) {
-            return { icon: <Flame size={120} />, label: "화재 알람 감지", color: "red" };
+
+        // AI 결과가 있으면 AI 우선
+        if (aiAutoResult) {
+            if (desc.includes("화재") || desc.includes("불") || desc.includes("Fire")) {
+                return { icon: <Flame size={120} />, label: "화재 알람 감지", color: "red" };
+            }
+            if (desc.includes("사이렌") || desc.includes("구급차") || desc.includes("소방차") || desc.includes("경찰차") || desc.includes("Siren")) {
+                return { icon: <Siren size={120} />, label: "긴급 사이렌 감지", color: "blue-red" };
+            }
         }
-        if (desc.includes("사이렌") || desc.includes("구급차") || desc.includes("소방차") || desc.includes("경찰차") || desc.includes("Siren")) {
-            return { icon: <Siren size={120} />, label: "긴급 사이렌 감지", color: "blue-red" };
+
+        // AI 결과 없으면 로컈 감지 결과 활용
+        if (localDetection) {
+            switch (localDetection.type) {
+                case 'fire_alarm':
+                    return { icon: <Flame size={120} />, label: "🔥 화재 경보음", color: "red" };
+                case 'ambulance':
+                    return { icon: <Siren size={120} />, label: "구급차 사이렌", color: "blue-red" };
+                case 'firetruck':
+                    return { icon: <Flame size={120} />, label: "소방차 사이렌", color: "red" };
+                case 'police':
+                    return { icon: <Siren size={120} />, label: "경찰차 사이렌", color: "blue-red" };
+                case 'siren':
+                    return { icon: <Siren size={120} />, label: "긴급 사이렌 감지", color: "blue-red" };
+                default:
+                    break;
+            }
         }
+
         return { icon: <AlertCircle size={120} />, label: "위험 상황 발생", color: "red" };
     };
 
@@ -72,7 +105,7 @@ export const DangerView: React.FC<any> = ({
                     </div>
 
                     <h1 className={`text-4xl font-black ${isColorBlindMode ? 'text-rose-900 border-b-4 border-rose-900 pb-2' : 'text-rose-600'} mb-16 tracking-tighter`}>
-                        {isCurrentlyAnalyzing ? "긴급 분석 중..." : dangerInfo.label}
+                        {isCurrentlyAnalyzing ? "긴급 분석 중..." : (localDetection?.label || dangerInfo.label)}
                     </h1>
 
                     <motion.div
@@ -95,8 +128,10 @@ export const DangerView: React.FC<any> = ({
                         )}
                     </motion.div>
 
-                    <p className={`text-xl font-bold ${isColorBlindMode ? 'text-black' : 'text-rose-950/70'} mb-12 leading-tight h-14`}>
-                        {isCurrentlyAnalyzing ? "극심한 소음이 들려서\n원인을 분석하고 있습니다." : aiAutoResult?.description || "매우 위험한 소리가\n감지되었습니다!"}
+                    <p className={`text-xl font-bold ${isColorBlindMode ? 'text-rose-900' : 'text-rose-950/70'} mb-12 leading-tight h-14`}>
+                        {isCurrentlyAnalyzing
+                            ? "극심한 소음이 들려서\n원인을 분석하고 있습니다."
+                            : (localDetection?.description || aiAutoResult?.description || "매우 위험한 소리가\n감지되었습니다!")}
                     </p>
 
                     {!isCurrentlyAnalyzing && (

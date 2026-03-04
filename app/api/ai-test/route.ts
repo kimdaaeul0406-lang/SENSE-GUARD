@@ -1,11 +1,11 @@
 /**
  * AI 테스트 API Route
- * 모델: gemini-3-flash-preview
+ * 모델: gemini-2.5-flash-lite
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
 
 export async function POST(request: NextRequest) {
     const apiKey = process.env.GOOGLE_API_KEY;
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             ok: true,
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-lite',
             prompt: prompt,
             response: aiResponse,
         });
@@ -156,7 +156,7 @@ export async function GET() {
 
         return NextResponse.json({
             ok: true,
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-lite',
             prompt: testPrompt,
             response: aiResponse,
         });
